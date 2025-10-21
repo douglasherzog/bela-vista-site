@@ -7,7 +7,7 @@
   <style>
     :root{ --bg:#0b1020; --card:#121a33; --muted:#9fb3d1; --text:#e8eef7; --primary:#5aa3ff; --accent:#ffd166; --danger:#ff6b6b; --radius:14px; }
     *{ box-sizing:border-box }
-    body{ margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial; background:var(--bg); color:var(--text) }
+    body{ margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial; background:var(--bg); color:var(--text); padding-bottom:260px }
     a{ color:var(--primary); text-decoration:none }
     header{ position:sticky; top:0; backdrop-filter: blur(6px); background:rgba(11,16,32,.6); border-bottom:1px solid rgba(255,255,255,.06) }
     .container{ max-width:1100px; margin:0 auto; padding:24px }
@@ -23,6 +23,8 @@
     .btn:hover{ background:#223062 }
     .badge{ display:inline-block; padding:4px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.12); color:#dbe7fb; background:#14204a; font-size:.85rem }
     footer{ border-top:1px solid rgba(255,255,255,.06); color:var(--muted) }
+    .mapbar{ position:fixed; left:0; right:0; bottom:0; height:240px; background:#000; border-top:1px solid rgba(255,255,255,.1); }
+    .mapbar iframe{ width:100%; height:100%; border:0; display:block }
   </style>
 </head>
 <body>
@@ -55,5 +57,11 @@
       <small>Rua Guarani, 212, Rio Pardo - RS — Atendimento 24h</small>
     </div>
   </footer>
+
+  {% if site and site.maps_embed_url %}
+  <div class="mapbar">
+    <iframe src="{{ site.maps_embed_url }}" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+  </div>
+  {% endif %}
 </body>
 </html>
