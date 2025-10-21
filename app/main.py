@@ -12,6 +12,21 @@ import re
 # Garantir criação das tabelas inicialmente (depois usaremos Alembic)
 Base.metadata.create_all(bind=engine)
 
+# Migração leve: adicionar coluna 'email' em SiteConfig no SQLite, se não existir
+try:
+    with engine.connect() as conn:
+        dialect = engine.dialect.name
+        if dialect == "sqlite":
+            cols = conn.exec_driver_sql("PRAGMA table_info(site_config)").fetchall()
+            col_names = {row[1] for row in cols}
+            if "email" not in col_names:
+                conn.exec_driver_sql("ALTER TABLE site_config ADD COLUMN email VARCHAR(200)")
+            if "primary_color" not in col_names:
+                conn.exec_driver_sql("ALTER TABLE site_config ADD COLUMN primary_color VARCHAR(20)")
+except Exception:
+    # silencioso em dev; em prod usar Alembic
+    pass
+
 app = FastAPI(title="Motel Bela Vista - Rio Pardo/RS")
 
 # Templates Jinja
@@ -65,6 +80,8 @@ async def config_post(
     endereco: str = Form(""),
     whatsapp: str = Form(""),
     telefone: str = Form(""),
+    email: str = Form(""),
+    primaryColor: str = Form(""),
     mapsEmbedUrl: str = Form(""),
     _: bool = Depends(require_basic_auth),
 ):
@@ -77,6 +94,8 @@ async def config_post(
                 endereco=endereco or None,
                 whatsapp=whatsapp or None,
                 telefone=telefone or None,
+                email=email or None,
+                primary_color=primaryColor or None,
                 maps_embed_url=mapsEmbedUrl or None,
             )
             db.add(site)
@@ -86,6 +105,8 @@ async def config_post(
             site.endereco = endereco or None
             site.whatsapp = whatsapp or None
             site.telefone = telefone or None
+            site.email = email or None
+            site.primary_color = primaryColor or None
             site.maps_embed_url = mapsEmbedUrl or None
         db.commit()
     return RedirectResponse(url="/config", status_code=status.HTTP_302_FOUND)

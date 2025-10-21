@@ -20,6 +20,8 @@ class SiteConfig(Base):
     endereco: Mapped[str | None] = mapped_column(String(300), nullable=True)
     whatsapp: Mapped[str | None] = mapped_column(String(50), nullable=True)
     telefone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    primary_color: Mapped[str | None] = mapped_column(String(20), nullable=True)
     maps_embed_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     updated_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

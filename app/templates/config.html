@@ -25,6 +25,14 @@
         <input name="telefone" value="{{ (site and site.telefone) or '' }}" />
       </div>
       <div class="field">
+        <label>Email</label>
+        <input name="email" type="email" value="{{ (site and site.email) or '' }}" placeholder="atendimento@motelbelavista.com" />
+      </div>
+      <div class="field">
+        <label>Cor Primária (HEX)</label>
+        <input name="primaryColor" value="{{ (site and site.primary_color) or '' }}" placeholder="#C2185B" />
+      </div>
+      <div class="field">
         <label>Google Maps Embed URL</label>
         <input name="mapsEmbedUrl" value="{{ (site and site.maps_embed_url) or '' }}" />
       </div>

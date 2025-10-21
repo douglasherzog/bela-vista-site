@@ -12,6 +12,9 @@
     {% if site and site.telefone %}
       <p><strong>Telefone:</strong> {{ site.telefone }}</p>
     {% endif %}
+    {% if site and site.email %}
+      <p><strong>Email:</strong> <a href="mailto:{{ site.email }}">{{ site.email }}</a></p>
+    {% endif %}
     {% if site and site.endereco %}
       <p><strong>Endereço:</strong> {{ site.endereco }}</p>
     {% endif %}
