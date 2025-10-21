@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Admin — Configurações do Site{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1 style="margin:0 0 12px">Configurações do Site</h1>
+    <form method="post" action="/config">
+      <div class="field">
+        <label>Nome do Site</label>
+        <input name="nomeSite" value="{{ (site and site.nome_site) or '' }}" />
+      </div>
+      <div class="field">
+        <label>Descrição breve</label>
+        <textarea name="descricaoBreve" rows="3">{{ (site and site.descricao_breve) or '' }}</textarea>
+      </div>
+      <div class="field">
+        <label>Endereço</label>
+        <input name="endereco" value="{{ (site and site.endereco) or '' }}" />
+      </div>
+      <div class="field">
+        <label>WhatsApp</label>
+        <input name="whatsapp" value="{{ (site and site.whatsapp) or '' }}" placeholder="(51)99584-3002" />
+      </div>
+      <div class="field">
+        <label>Telefone</label>
+        <input name="telefone" value="{{ (site and site.telefone) or '' }}" />
+      </div>
+      <div class="field">
+        <label>Google Maps Embed URL</label>
+        <input name="mapsEmbedUrl" value="{{ (site and site.maps_embed_url) or '' }}" />
+      </div>
+      <button class="btn" type="submit">Salvar</button>
+    </form>
+  </div>
+{% endblock %}

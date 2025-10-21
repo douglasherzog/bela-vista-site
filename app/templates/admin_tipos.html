@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Admin — Tipos de Suíte{% endblock %}
+{% block content %}
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+      <h1 style="margin:0">Tipos de Suíte</h1>
+      <a class="btn" href="/admin/tipos/novo">Novo</a>
+    </div>
+    <table style="margin-top:12px; width:100%">
+      <thead><tr><th>Ordem</th><th>Nome</th><th>Descrição</th><th>Ações</th></tr></thead>
+      <tbody>
+        {% for i in items %}
+          <tr>
+            <td>{{ i.ordem }}</td>
+            <td>{{ i.nome }}</td>
+            <td>{{ i.descricao or '' }}</td>
+            <td>
+              <a class="btn" href="/admin/tipos/editar/{{ i.id }}">Editar</a>
+              <form method="post" action="/admin/tipos/excluir/{{ i.id }}" style="display:inline">
+                <button class="btn btn-danger" type="submit">Excluir</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4" class="subtitle">Nenhum tipo cadastrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

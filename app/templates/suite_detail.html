@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ suite and suite.titulo or 'Suíte' }} — {{ (site and site.nome_site) or 'Motel Bela Vista' }}{% endblock %}
+{% block content %}
+  {% if not suite %}
+    <div class="card"><p class="subtitle">Suíte não encontrada.</p></div>
+  {% else %}
+    <div class="grid cols-2">
+      <div class="card">
+        <h1 style="margin:0 0 6px">{{ suite.titulo }}</h1>
+        <div class="subtitle">{{ suite.tipo and suite.tipo.nome or '' }}</div>
+        {% if suite.descricao %}
+          <p style="margin-top:10px">{{ suite.descricao }}</p>
+        {% endif %}
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">
+          {% if suite.preco_hora %}<span class="badge">R$ {{ '%.2f'|format(suite.preco_hora) }}/h</span>{% endif %}
+          {% if suite.preco_pernoite %}<span class="badge">Pernoite R$ {{ '%.2f'|format(suite.preco_pernoite) }}</span>{% endif %}
+          {% if not suite.preco_hora and not suite.preco_pernoite %}<span class="subtitle">Consulte valores</span>{% endif %}
+        </div>
+        {% if suite.amenidades and suite.amenidades|length %}
+          <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap">
+            {% for a in suite.amenidades %}
+              <span class="badge">{{ a.nome }}</span>
+            {% endfor %}
+          </div>
+        {% endif %}
+        {% if site and site.whatsapp %}
+          <div style="margin-top:12px">
+            <a class="btn" href="https://wa.me/55{{ site.whatsapp | replace('(', '') | replace(')', '') | replace('-', '') | replace(' ', '') }}?text=Olá%2C+quero+informações+sobre+a+suíte+{{ suite.titulo | urlencode }}" target="_blank">Reservar pelo WhatsApp</a>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h2 style="margin:0 0 10px">Galeria</h2>
+        {% if fotos and fotos|length %}
+          <div style="display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:8px">
+            {% for f in fotos %}
+              <img src="{{ f.url }}" alt="{{ f.legenda or '' }}" style="width:100%; height:150px; object-fit:cover; border-radius:10px" />
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="subtitle">Sem fotos cadastradas.</p>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}

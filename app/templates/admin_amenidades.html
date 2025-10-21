@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Admin — Amenidades{% endblock %}
+{% block content %}
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+      <h1 style="margin:0">Amenidades</h1>
+      <a class="btn" href="/admin/amenidades/novo">Nova</a>
+    </div>
+    <table style="margin-top:12px; width:100%">
+      <thead><tr><th>Nome</th><th>Ícone</th><th>Ações</th></tr></thead>
+      <tbody>
+        {% for i in items %}
+          <tr>
+            <td>{{ i.nome }}</td>
+            <td>{{ i.icone or '' }}</td>
+            <td>
+              <a class="btn" href="/admin/amenidades/editar/{{ i.id }}">Editar</a>
+              <form method="post" action="/admin/amenidades/excluir/{{ i.id }}" style="display:inline">
+                <button class="btn btn-danger" type="submit">Excluir</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="3" class="subtitle">Nenhuma amenidade cadastrada.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ (site and site.nome_site) or 'Motel Bela Vista — Rio Pardo/RS' }}{% endblock %}
+{% block content %}
+  <div class="grid cols-2">
+    <div class="card">
+      <h1 style="margin:0 0 8px">{{ (site and site.nome_site) or 'Motel Bela Vista' }}</h1>
+      {% if site and site.descricao_breve %}
+        <p class="subtitle">{{ site.descricao_breve }}</p>
+      {% else %}
+        <p class="subtitle">Conforto, privacidade e atendimento 24h em Rio Pardo/RS.</p>
+      {% endif %}
+      {% if site and site.whatsapp %}
+        <div style="margin-top:12px">
+          <a class="btn" href="https://wa.me/55{{ site.whatsapp | replace('(', '') | replace(')', '') | replace('-', '') | replace(' ', '') }}?text=Olá%2C+gostaria+de+informações" target="_blank">Fale pelo WhatsApp</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 8px">Destaques</h2>
+      <div style="display:flex; gap:8px; flex-wrap:wrap">
+        <span class="badge">Ar-condicionado</span>
+        <span class="badge">Wi‑Fi</span>
+        <span class="badge">TV Smart</span>
+        <span class="badge">Hidromassagem</span>
+      </div>
+    </div>
+  </div>
+{% endblock %}

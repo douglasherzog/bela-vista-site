@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Contato — {{ (site and site.nome_site) or 'Motel Bela Vista' }}{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1 style="margin:0 0 8px">Contato</h1>
+    {% if site and site.whatsapp %}
+      <p><strong>WhatsApp:</strong> {{ site.whatsapp }}</p>
+      <p>
+        <a class="btn" href="https://wa.me/55{{ site.whatsapp | replace('(', '') | replace(')', '') | replace('-', '') | replace(' ', '') }}?text=Olá%2C+gostaria+de+informações" target="_blank">Fale pelo WhatsApp</a>
+      </p>
+    {% endif %}
+    {% if site and site.telefone %}
+      <p><strong>Telefone:</strong> {{ site.telefone }}</p>
+    {% endif %}
+    {% if site and site.endereco %}
+      <p><strong>Endereço:</strong> {{ site.endereco }}</p>
+    {% endif %}
+  </div>
+{% endblock %}

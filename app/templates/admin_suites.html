@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Admin — Suítes{% endblock %}
+{% block content %}
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+      <h1 style="margin:0">Suítes</h1>
+      <a class="btn" href="/admin/suites/novo">Nova</a>
+    </div>
+    <table style="margin-top:12px; width:100%">
+      <thead><tr><th>Ordem</th><th>Título</th><th>Tipo</th><th>Preços</th><th>Destaque</th><th>Ações</th></tr></thead>
+      <tbody>
+        {% for s in items %}
+          <tr>
+            <td>{{ s.ordem }}</td>
+            <td>{{ s.titulo }}</td>
+            <td>{{ s.tipo and s.tipo.nome or '-' }}</td>
+            <td>
+              {% if s.preco_hora %}<span class="badge">R$ {{ '%.2f'|format(s.preco_hora) }}/h</span>{% endif %}
+              {% if s.preco_pernoite %}<span class="badge">Pernoite R$ {{ '%.2f'|format(s.preco_pernoite) }}</span>{% endif %}
+              {% if not s.preco_hora and not s.preco_pernoite %}<span class="subtitle">sem preço</span>{% endif %}
+            </td>
+            <td>{{ s.destaque and 'Sim' or 'Não' }}</td>
+            <td>
+              <a class="btn" href="/admin/suites/editar/{{ s.id }}">Editar</a>
+              <a class="btn" href="/admin/suites/{{ s.id }}/fotos">Fotos</a>
+              <form method="post" action="/admin/suites/excluir/{{ s.id }}" style="display:inline">
+                <button class="btn btn-danger" type="submit">Excluir</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6" class="subtitle">Nenhuma suíte cadastrada.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

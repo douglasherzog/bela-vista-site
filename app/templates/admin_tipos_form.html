@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Admin — Tipo de Suíte{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1 style="margin:0 0 12px">{{ item and 'Editar' or 'Novo' }} Tipo de Suíte</h1>
+    <form method="post" action="{{ item and ('/admin/tipos/editar/' ~ item.id) or '/admin/tipos/novo' }}">
+      <div class="field">
+        <label>Nome</label>
+        <input name="nome" value="{{ item and item.nome or '' }}" required />
+      </div>
+      <div class="field">
+        <label>Descrição</label>
+        <textarea name="descricao" rows="3">{{ item and item.descricao or '' }}</textarea>
+      </div>
+      <div class="field">
+        <label>Ordem</label>
+        <input type="number" name="ordem" value="{{ item and item.ordem or 0 }}" />
+      </div>
+      <button class="btn" type="submit">Salvar</button>
+    </form>
+  </div>
+{% endblock %}

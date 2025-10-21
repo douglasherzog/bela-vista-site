@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Admin — Fotos da Suíte{% endblock %}
+{% block content %}
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+      <h1 style="margin:0">Fotos — {{ suite and suite.titulo }}</h1>
+      <a class="btn" href="/admin/suites">Voltar</a>
+    </div>
+
+    <form method="post" action="/admin/suites/{{ suite.id }}/fotos/novo" style="margin-top:12px">
+      <div class="grid" style="grid-template-columns: 2fr 1fr 1fr 1fr; gap:10px">
+        <input name="url" placeholder="URL da imagem" required />
+        <input name="legenda" placeholder="Legenda (opcional)" />
+        <input type="number" name="ordem" value="0" />
+        <label style="display:flex; align-items:center; gap:6px">
+          <input type="checkbox" name="capa" /> Capa
+        </label>
+      </div>
+      <div style="margin-top:10px"><button class="btn" type="submit">Adicionar foto</button></div>
+    </form>
+
+    <table style="margin-top:16px; width:100%">
+      <thead><tr><th>Prévia</th><th>Legenda</th><th>Ordem</th><th>Capa</th><th>Ações</th></tr></thead>
+      <tbody>
+        {% for f in fotos %}
+          <tr>
+            <td><img src="{{ f.url }}" alt="{{ f.legenda or '' }}" style="max-height:60px; border-radius:8px" /></td>
+            <td>{{ f.legenda or '' }}</td>
+            <td>{{ f.ordem }}</td>
+            <td>{{ f.capa and 'Sim' or 'Não' }}</td>
+            <td>
+              <form method="post" action="/admin/fotos/excluir/{{ f.id }}" style="display:inline">
+                <button class="btn btn-danger" type="submit">Excluir</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5" class="subtitle">Nenhuma foto cadastrada.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

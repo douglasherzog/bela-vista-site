@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Admin — {{ item and 'Editar' or 'Nova' }} Suíte{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1 style="margin:0 0 12px">{{ item and 'Editar' or 'Nova' }} Suíte</h1>
+    <form method="post" action="{{ item and ('/admin/suites/editar/' ~ item.id) or '/admin/suites/novo' }}">
+      <div class="field">
+        <label>Título</label>
+        <input name="titulo" value="{{ item and item.titulo or '' }}" required />
+      </div>
+      <div class="field">
+        <label>Slug</label>
+        <input name="slug" value="{{ item and item.slug or '' }}" placeholder="auto se vazio" />
+      </div>
+      <div class="field">
+        <label>Tipo</label>
+        <select name="tipo_id">
+          <option value="">—</option>
+          {% for t in tipos %}
+            <option value="{{ t.id }}" {{ item and item.tipo_id==t.id and 'selected' or '' }}>{{ t.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Descrição</label>
+        <textarea name="descricao" rows="4">{{ item and item.descricao or '' }}</textarea>
+      </div>
+      <div class="field">
+        <label>Preço por hora (R$)</label>
+        <input name="preco_hora" value="{{ item and item.preco_hora or '' }}" />
+      </div>
+      <div class="field">
+        <label>Preço pernoite (R$)</label>
+        <input name="preco_pernoite" value="{{ item and item.preco_pernoite or '' }}" />
+      </div>
+      <div class="field">
+        <label>Amenidades</label>
+        <div style="display:flex; gap:8px; flex-wrap:wrap">
+          {% set selected = item and item.amenidades | map(attribute='id') | list or [] %}
+          {% for a in amenidades %}
+            <label class="badge" style="cursor:pointer">
+              <input type="checkbox" name="amenidades_ids" value="{{ a.id }}" style="margin-right:6px" {{ a.id in selected and 'checked' or '' }} /> {{ a.nome }}
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="field">
+        <label>Destaque</label>
+        <input type="checkbox" name="destaque" {{ item and item.destaque and 'checked' or '' }} />
+      </div>
+      <div class="field">
+        <label>Ordem</label>
+        <input type="number" name="ordem" value="{{ item and item.ordem or 0 }}" />
+      </div>
+      <button class="btn" type="submit">Salvar</button>
+    </form>
+  </div>
+{% endblock %}

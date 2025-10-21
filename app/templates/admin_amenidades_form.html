@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Admin — Amenidade{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1 style="margin:0 0 12px">{{ item and 'Editar' or 'Nova' }} Amenidade</h1>
+    <form method="post" action="{{ item and ('/admin/amenidades/editar/' ~ item.id) or '/admin/amenidades/novo' }}">
+      <div class="field">
+        <label>Nome</label>
+        <input name="nome" value="{{ item and item.nome or '' }}" required />
+      </div>
+      <div class="field">
+        <label>Ícone (classe ou URL)</label>
+        <input name="icone" value="{{ item and item.icone or '' }}" />
+      </div>
+      <button class="btn" type="submit">Salvar</button>
+    </form>
+  </div>
+{% endblock %}

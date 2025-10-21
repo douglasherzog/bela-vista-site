@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Suítes — {{ (site and site.nome_site) or 'Motel Bela Vista' }}{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1 style="margin:0 0 12px">Nossas Suítes</h1>
+    {% if tipos and tipos|length %}
+      <div style="margin:6px 0 14px; display:flex; gap:8px; flex-wrap:wrap">
+        {% for t in tipos %}
+          <span class="badge">{{ t.nome }}</span>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if suites and suites|length %}
+      <div class="grid" style="grid-template-columns: repeat(2, minmax(0,1fr));">
+        {% for s in suites %}
+          <a href="/suites/{{ s.slug }}" class="card" style="display:block">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="flex:1">
+                <h3 style="margin:0 0 4px">{{ s.titulo }}</h3>
+                <div class="subtitle">{{ s.tipo and s.tipo.nome or '' }}</div>
+                <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
+                  {% if s.preco_hora %}<span class="badge">R$ {{ '%.2f'|format(s.preco_hora) }}/h</span>{% endif %}
+                  {% if s.preco_pernoite %}<span class="badge">Pernoite R$ {{ '%.2f'|format(s.preco_pernoite) }}</span>{% endif %}
+                  {% if not s.preco_hora and not s.preco_pernoite %}<span class="subtitle">Consulte valores</span>{% endif %}
+                </div>
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="subtitle">Em breve nossas suítes estarão disponíveis aqui.</p>
+    {% endif %}
+  </div>
+{% endblock %}

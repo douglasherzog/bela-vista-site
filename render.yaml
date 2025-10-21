@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: bela-vista-site
+    env: python
+    plan: free
+    pythonVersion: 3.13
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_USER
+        sync: false
+      - key: ADMIN_PASS
+        sync: false

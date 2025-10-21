@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Sobre — {{ (site and site.nome_site) or 'Motel Bela Vista' }}{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1 style="margin:0 0 8px">Sobre</h1>
+    <p class="subtitle">Conforto, discrição e atendimento 24h na cidade de Rio Pardo/RS.</p>
+    {% if site and site.endereco %}
+      <p><strong>Endereço:</strong> {{ site.endereco }}</p>
+    {% endif %}
+    {% if site and site.maps_embed_url %}
+      <div style="margin-top:12px">
+        <iframe src="{{ site.maps_embed_url }}" width="100%" height="300" style="border:0; border-radius:12px" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
