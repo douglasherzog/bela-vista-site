@@ -13,7 +13,7 @@
     header{ position:sticky; top:0; backdrop-filter: blur(6px); background:rgba(11,16,32,.6); border-bottom:1px solid rgba(255,255,255,.06) }
     .container{ max-width:1100px; margin:0 auto; padding:24px }
     .brand{ display:flex; gap:12px; align-items:center }
-    .logo{ width:40px; height:40px; border-radius:8px; display:block; object-fit:contain; background:transparent }
+    .logo{ width:50px; height:50px; border-radius:8px; display:block; object-fit:contain; background:transparent }
     .title{ font-weight:700; letter-spacing:.3px }
     .subtitle{ color:var(--muted); font-size:.95rem }
     main{ padding:32px 0 }
@@ -30,6 +30,12 @@
     .mapbar .info .line{ color:#d4def0 }
     .mapbar .info .label{ color:var(--muted); font-size:.9rem }
     .mapbar iframe{ width:100%; height:100%; border:0; display:block; border-radius:10px }
+    /* Admin forms */
+    .form{ display:grid; gap:14px }
+    .form .row{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px }
+    .field label{ display:block; margin:0 0 6px; font-weight:600; color:var(--muted) }
+    .field input, .field textarea, .field select{ width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f1730; color:#eaf1fb }
+    .actions{ margin-top:16px; display:flex; gap:10px; flex-wrap:wrap }
   </style>
 </head>
 <body>
@@ -39,14 +45,15 @@
         <img class="logo" src="/static/img/logo.svg" alt="Motel Bela Vista" />
         <div>
           <div class="title">Motel Bela Vista</div>
-          <div class="subtitle">Rio Pardo/RS — conforto e privacidade</div>
+          <div class="subtitle">Rio Pardo/RS — conforto e privacidade — Atendimento 24h</div>
         </div>
       </div>
       <nav style="display:flex; gap:10px; flex-wrap:wrap;">
         <a class="btn" href="/">Início</a>
         <a class="btn" href="/sobre">Sobre</a>
+        <a class="btn" href="/quartos">Quartos</a>
         <a class="btn" href="/contato">Contato</a>
-        <a class="btn" href="/config">Admin</a>
+        <a class="btn" href="/administracao">Administração</a>
       </nav>
     </div>
   </header>
@@ -58,9 +65,7 @@
   </main>
 
   <footer>
-    <div class="container" style="padding:18px 24px;">
-      <small>Rua Guarani, 212, Rio Pardo - RS — Atendimento 24h</small>
-    </div>
+    <div class="container" style="padding:18px 24px;"></div>
   </footer>
 
   {% if site and site.maps_embed_url %}

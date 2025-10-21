@@ -39,7 +39,7 @@ def main():
             tipos_map[nome] = t
 
         # Amenidades
-        amenidades = ["Ar-condicionado", "Wi‑Fi", "TV Smart", "Hidromassagem"]
+        amenidades = ["Ar-condicionado", "Wi‑Fi", "TV Smart", "Hidromassagem", "Frigobar"]
         amen_map = {}
         for nome in amenidades:
             a = db.execute(select(Amenidade).where(Amenidade.nome == nome)).scalar_one_or_none()
@@ -49,28 +49,52 @@ def main():
                 db.flush()
             amen_map[nome] = a
 
-        # Suítes com preços exemplo
-        suites_ex = [
-            ("California", "Standard", "120.00", "260.00"),
-            ("Arizona", "Standard", "100.00", "230.00"),
-            ("Texas", "Luxo", "110.00", "240.00"),
-            ("Dallas", "Temática", "130.00", "280.00"),
+        # Suítes:
+        # - 11 suítes com todas as amenidades exceto Hidromassagem
+        # - 1 suíte com apenas Hidromassagem
+        quartos = [f"Quarto {i}" for i in range(1, 12)]
+        suite_hidro = "Suíte Hidromassagem"
+
+        # Monta listas de amenidades conforme regra
+        amen_todas_exceto_hidro = [
+            amen_map[n]
+            for n in amenidades
+            if n != "Hidromassagem"
         ]
-        for titulo, tipo_nome, ph, pp in suites_ex:
+        amen_so_hidro = [amen_map["Hidromassagem"]]
+
+        # Criar 11 suítes
+        for idx, titulo in enumerate(quartos, start=1):
             s = db.execute(select(Suite).where(Suite.slug == slugify(titulo))).scalar_one_or_none()
             if s is None:
                 s = Suite(
                     titulo=titulo,
                     slug=slugify(titulo),
-                    tipo_id=tipos_map.get(tipo_nome).id if tipos_map.get(tipo_nome) else None,
-                    descricao=f"Suíte {titulo} com conforto e privacidade.",
-                    preco_hora=ph,
-                    preco_pernoite=pp,
+                    tipo_id=tipos_map.get("Standard").id if tipos_map.get("Standard") else None,
+                    descricao=f"{titulo} com conforto e privacidade.",
+                    preco_hora=str(100 + (idx % 3) * 10) + ".00",
+                    preco_pernoite=str(220 + (idx % 3) * 10) + ".00",
                     destaque=False,
-                    ordem=0,
+                    ordem=idx,
                 )
-                s.amenidades = list(amen_map.values())
+                s.amenidades = amen_todas_exceto_hidro
                 db.add(s)
+
+        # Criar 1 suíte com apenas hidromassagem
+        s = db.execute(select(Suite).where(Suite.slug == slugify(suite_hidro))).scalar_one_or_none()
+        if s is None:
+            s = Suite(
+                titulo=suite_hidro,
+                slug=slugify(suite_hidro),
+                tipo_id=tipos_map.get("Luxo").id if tipos_map.get("Luxo") else None,
+                descricao="Suíte com hidromassagem para momentos especiais.",
+                preco_hora="150.00",
+                preco_pernoite="320.00",
+                destaque=True,
+                ordem=0,
+            )
+            s.amenidades = amen_so_hidro
+            db.add(s)
 
         db.commit()
     print("Seed aplicado com sucesso")

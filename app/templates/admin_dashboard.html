@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Administração — Motel Bela Vista{% endblock %}
+{% block content %}
+<div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px">
+  <a class="card" href="/admin/suites" style="display:block">
+    <div class="badge">Cadastro</div>
+    <h2 style="margin:6px 0 4px">Suítes</h2>
+    <div class="subtitle">Criar, editar e remover suítes</div>
+  </a>
+  <a class="card" href="/admin/tipos" style="display:block">
+    <div class="badge">Estrutura</div>
+    <h2 style="margin:6px 0 4px">Tipos de Suíte</h2>
+    <div class="subtitle">Gerenciar categorias</div>
+  </a>
+  <a class="card" href="/admin/amenidades" style="display:block">
+    <div class="badge">Serviços</div>
+    <h2 style="margin:6px 0 4px">Amenidades</h2>
+    <div class="subtitle">Itens disponíveis por suíte</div>
+  </a>
+  <a class="card" href="/admin/funcionarios" style="display:block">
+    <div class="badge">Pessoal</div>
+    <h2 style="margin:6px 0 4px">Funcionários</h2>
+    <div class="subtitle">Cadastro e contatos</div>
+  </a>
+  <a class="card" href="/config" style="display:block">
+    <div class="badge">Site</div>
+    <h2 style="margin:6px 0 4px">Configurações</h2>
+    <div class="subtitle">Dados de contato, mapa e tema</div>
+  </a>
+</div>
+{% endblock %}
