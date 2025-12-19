@@ -3,8 +3,9 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from .database import Base, engine, get_session
-from .models import SiteConfig, TipoSuite, Amenidade, Suite, Foto
+from .models import SiteConfig, TipoSuite, Amenidade, Suite, Foto, Funcionario
 from .auth import require_basic_auth
 from typing import List
 import re
@@ -43,8 +44,31 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 async def home(request: Request):
     with get_session() as db:
         site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+        suites = db.execute(
+            select(Suite)
+            .options(selectinload(Suite.tipo))
+            .order_by(Suite.destaque.desc(), Suite.ordem.asc(), Suite.titulo.asc())
+        ).scalars().all()
+        suite_ids = [s.id for s in suites]
+        cover_map: dict[int, Foto | None] = {}
+        amen_map: dict[int, list[str]] = {}
+        for s in suites:
+            f = db.execute(
+                select(Foto).where(Foto.suite_id == s.id).order_by(Foto.capa.desc(), Foto.ordem.asc())
+            ).scalars().first()
+            cover_map[s.id] = f
+        if suite_ids:
+            from .models import suite_amenidade
+            rows = db.execute(
+                select(suite_amenidade.c.suite_id, Amenidade.nome)
+                .join(Amenidade, Amenidade.id == suite_amenidade.c.amenidade_id)
+                .where(suite_amenidade.c.suite_id.in_(suite_ids))
+                .order_by(Amenidade.nome.asc())
+            ).all()
+            for sid, anome in rows:
+                amen_map.setdefault(sid, []).append(anome)
     t = templates_env.get_template("index.html")
-    return t.render(site=site)
+    return t.render(site=site, suites=suites, cover_map=cover_map, amen_map=amen_map)
 
 
 @app.get("/sobre", response_class=HTMLResponse)
@@ -63,7 +87,12 @@ async def contato(request: Request):
     return t.render(site=site)
 
 
-# ---------------------- Admin básico ----------------------
+# ---------------------- Administração ----------------------
+
+@app.get("/administracao", response_class=HTMLResponse)
+async def admin_dashboard(_: bool = Depends(require_basic_auth)):
+    t = templates_env.get_template("admin_dashboard.html")
+    return t.render()
 
 @app.get("/config", response_class=HTMLResponse)
 async def config_get(request: Request, _: bool = Depends(require_basic_auth)):
@@ -251,7 +280,7 @@ async def amenidades_delete(id: int, _: bool = Depends(require_basic_auth)):
 @app.get("/admin/suites", response_class=HTMLResponse)
 async def suites_list(_: bool = Depends(require_basic_auth)):
     with get_session() as db:
-        items = db.execute(select(Suite).order_by(Suite.ordem.asc(), Suite.titulo.asc())).scalars().all()
+        items = db.execute(select(Suite).options(selectinload(Suite.tipo)).order_by(Suite.ordem.asc(), Suite.titulo.asc())).scalars().all()
         tipos = db.execute(select(TipoSuite).order_by(TipoSuite.nome.asc())).scalars().all()
     t = templates_env.get_template("admin_suites.html")
     return t.render(items=items, tipos=tipos)
@@ -397,7 +426,7 @@ async def suites_public_list(request: Request):
     with get_session() as db:
         site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
         tipos = db.execute(select(TipoSuite).order_by(TipoSuite.ordem.asc(), TipoSuite.nome.asc())).scalars().all()
-        suites = db.execute(select(Suite).order_by(Suite.ordem.asc(), Suite.titulo.asc())).scalars().all()
+        suites = db.execute(select(Suite).options(selectinload(Suite.tipo)).order_by(Suite.ordem.asc(), Suite.titulo.asc())).scalars().all()
     t = templates_env.get_template("suites.html")
     return t.render(site=site, tipos=tipos, suites=suites)
 
@@ -414,3 +443,36 @@ async def suite_public_detail(slug: str):
             ).scalars().all()
     t = templates_env.get_template("suite_detail.html")
     return t.render(site=site, suite=suite, fotos=fotos)
+
+
+# ---------------------- Público: Quartos (com painéis) ----------------------
+@app.get("/quartos", response_class=HTMLResponse)
+async def quartos_public_list(request: Request):
+    with get_session() as db:
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+        suites = db.execute(
+            select(Suite)
+            .options(selectinload(Suite.tipo))
+            .order_by(Suite.destaque.desc(), Suite.ordem.asc(), Suite.titulo.asc())
+        ).scalars().all()
+        suite_ids = [s.id for s in suites]
+        cover_map: dict[int, Foto | None] = {}
+        amen_map: dict[int, list[str]] = {}
+        for s in suites:
+            f = db.execute(
+                select(Foto).where(Foto.suite_id == s.id).order_by(Foto.capa.desc(), Foto.ordem.asc())
+            ).scalars().first()
+            cover_map[s.id] = f
+        if suite_ids:
+            # coletar amenidades por suíte
+            from .models import suite_amenidade, Amenidade
+            rows = db.execute(
+                select(suite_amenidade.c.suite_id, Amenidade.nome)
+                .join(Amenidade, Amenidade.id == suite_amenidade.c.amenidade_id)
+                .where(suite_amenidade.c.suite_id.in_(suite_ids))
+                .order_by(Amenidade.nome.asc())
+            ).all()
+            for sid, anome in rows:
+                amen_map.setdefault(sid, []).append(anome)
+    t = templates_env.get_template("quartos.html")
+    return t.render(site=site, suites=suites, cover_map=cover_map, amen_map=amen_map)

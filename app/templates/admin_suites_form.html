@@ -3,35 +3,45 @@
 {% block content %}
   <div class="card">
     <h1 style="margin:0 0 12px">{{ item and 'Editar' or 'Nova' }} Suíte</h1>
-    <form method="post" action="{{ item and ('/admin/suites/editar/' ~ item.id) or '/admin/suites/novo' }}">
-      <div class="field">
-        <label>Título</label>
-        <input name="titulo" value="{{ item and item.titulo or '' }}" required />
+    <form class="form" method="post" action="{{ item and ('/admin/suites/editar/' ~ item.id) or '/admin/suites/novo' }}">
+      <div class="row">
+        <div class="field">
+          <label>Título</label>
+          <input name="titulo" value="{{ item and item.titulo or '' }}" required />
+        </div>
+        <div class="field">
+          <label>Slug</label>
+          <input name="slug" value="{{ item and item.slug or '' }}" placeholder="auto se vazio" />
+        </div>
       </div>
-      <div class="field">
-        <label>Slug</label>
-        <input name="slug" value="{{ item and item.slug or '' }}" placeholder="auto se vazio" />
-      </div>
-      <div class="field">
-        <label>Tipo</label>
-        <select name="tipo_id">
-          <option value="">—</option>
-          {% for t in tipos %}
-            <option value="{{ t.id }}" {{ item and item.tipo_id==t.id and 'selected' or '' }}>{{ t.nome }}</option>
-          {% endfor %}
-        </select>
+      <div class="row">
+        <div class="field">
+          <label>Tipo</label>
+          <select name="tipo_id">
+            <option value="">—</option>
+            {% for t in tipos %}
+              <option value="{{ t.id }}" {{ item and item.tipo_id==t.id and 'selected' or '' }}>{{ t.nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Destaque</label>
+          <label style="display:flex; align-items:center; gap:8px"><input type="checkbox" name="destaque" {{ item and item.destaque and 'checked' or '' }} /> Marcar como destaque</label>
+        </div>
       </div>
       <div class="field">
         <label>Descrição</label>
         <textarea name="descricao" rows="4">{{ item and item.descricao or '' }}</textarea>
       </div>
-      <div class="field">
-        <label>Preço por hora (R$)</label>
-        <input name="preco_hora" value="{{ item and item.preco_hora or '' }}" />
-      </div>
-      <div class="field">
-        <label>Preço pernoite (R$)</label>
-        <input name="preco_pernoite" value="{{ item and item.preco_pernoite or '' }}" />
+      <div class="row">
+        <div class="field">
+          <label>Preço por hora (R$)</label>
+          <input name="preco_hora" value="{{ item and item.preco_hora or '' }}" />
+        </div>
+        <div class="field">
+          <label>Preço pernoite (R$)</label>
+          <input name="preco_pernoite" value="{{ item and item.preco_pernoite or '' }}" />
+        </div>
       </div>
       <div class="field">
         <label>Amenidades</label>
@@ -44,15 +54,17 @@
           {% endfor %}
         </div>
       </div>
-      <div class="field">
-        <label>Destaque</label>
-        <input type="checkbox" name="destaque" {{ item and item.destaque and 'checked' or '' }} />
+      <div class="row">
+        <div class="field">
+          <label>Ordem</label>
+          <input type="number" name="ordem" value="{{ item and item.ordem or 0 }}" />
+        </div>
+        <div></div>
       </div>
-      <div class="field">
-        <label>Ordem</label>
-        <input type="number" name="ordem" value="{{ item and item.ordem or 0 }}" />
+      <div class="actions">
+        <button class="btn" type="submit">Salvar</button>
+        <a class="btn" href="/admin/suites">Voltar</a>
       </div>
-      <button class="btn" type="submit">Salvar</button>
     </form>
   </div>
 {% endblock %}

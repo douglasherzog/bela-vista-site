@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Funcionários — Administração{% endblock %}
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+  <h1 style="margin:0">Funcionários</h1>
+  <a class="btn" href="/admin/funcionarios/novo">Novo funcionário</a>
+</div>
+<div class="card">
+  {% if items and items|length > 0 %}
+  <table style="width:100%; border-collapse:collapse">
+    <thead>
+      <tr style="text-align:left; color:#a9b9d4">
+        <th style="padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.08)">Nome</th>
+        <th style="padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.08)">Cargo</th>
+        <th style="padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.08)">Telefone</th>
+        <th style="padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.08)">WhatsApp</th>
+        <th style="padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.08)">Email</th>
+        <th style="padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.08)">Status</th>
+        <th style="padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.08)">Ordem</th>
+        <th style="padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.08)"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in items %}
+      <tr>
+        <td style="padding:10px 10px">{{ f.nome }}</td>
+        <td style="padding:10px 10px">{{ f.cargo or '-' }}</td>
+        <td style="padding:10px 10px">{{ f.telefone or '-' }}</td>
+        <td style="padding:10px 10px">{{ f.whatsapp or '-' }}</td>
+        <td style="padding:10px 10px">{{ f.email or '-' }}</td>
+        <td style="padding:10px 10px">{{ f.status }}</td>
+        <td style="padding:10px 10px">{{ f.ordem }}</td>
+        <td style="padding:10px 10px; display:flex; gap:8px">
+          <a class="btn" href="/admin/funcionarios/editar/{{ f.id }}">Editar</a>
+          <form method="post" action="/admin/funcionarios/excluir/{{ f.id }}" onsubmit="return confirm('Excluir?')">
+            <button class="btn" type="submit">Excluir</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div style="color:#a9b9d4">Nenhum funcionário cadastrado.</div>
+  {% endif %}
+</div>
+{% endblock %}

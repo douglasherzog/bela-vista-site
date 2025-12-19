@@ -77,3 +77,15 @@ class Foto(Base):
     capa: Mapped[bool] = mapped_column(Boolean, default=False)
 
     suite: Mapped[Suite] = relationship(back_populates="fotos")
+
+
+class Funcionario(Base):
+    __tablename__ = "funcionarios"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    nome: Mapped[str] = mapped_column(String(200))
+    cargo: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    telefone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    whatsapp: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="ativo")
+    ordem: Mapped[int] = mapped_column(Integer, default=0)

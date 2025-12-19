@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if item else 'Novo' }} Funcionário — Administração{% endblock %}
+{% block content %}
+  <h1 style="margin-top:0">{{ 'Editar' if item else 'Novo' }} Funcionário</h1>
+  <form method="post" action="{{ '/admin/funcionarios/editar/' ~ item.id if item else '/admin/funcionarios/novo' }}" class="card">
+    <div class="grid cols-2">
+      <div>
+        <label>Nome</label>
+        <input name="nome" value="{{ (item and item.nome) or '' }}" required />
+      </div>
+      <div>
+        <label>Cargo</label>
+        <input name="cargo" value="{{ (item and item.cargo) or '' }}" />
+      </div>
+      <div>
+        <label>Telefone</label>
+        <input name="telefone" value="{{ (item and item.telefone) or '' }}" />
+      </div>
+      <div>
+        <label>WhatsApp</label>
+        <input name="whatsapp" value="{{ (item and item.whatsapp) or '' }}" />
+      </div>
+      <div>
+        <label>Email</label>
+        <input type="email" name="email" value="{{ (item and item.email) or '' }}" />
+      </div>
+      <div>
+        <label>Status</label>
+        <select name="status_val">
+          <option value="ativo" {{ 'selected' if (item and item.status=='ativo') else '' }}>Ativo</option>
+          <option value="inativo" {{ 'selected' if (item and item.status=='inativo') else '' }}>Inativo</option>
+        </select>
+      </div>
+      <div>
+        <label>Ordem</label>
+        <input type="number" name="ordem" value="{{ (item and item.ordem) or 0 }}" />
+      </div>
+    </div>
+    <div style="margin-top:16px; display:flex; gap:10px">
+      <button class="btn" type="submit">Salvar</button>
+      <a class="btn" href="/admin/funcionarios">Voltar</a>
+    </div>
+  </form>
+{% endblock %}

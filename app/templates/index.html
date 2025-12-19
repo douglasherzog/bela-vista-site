@@ -1,29 +1,60 @@
 {% extends "base.html" %}
 {% block title %}{{ (site and site.nome_site) or 'Motel Bela Vista — Rio Pardo/RS' }}{% endblock %}
 {% block content %}
-  <div class="grid cols-2">
-    <div class="card">
-      <h1 style="margin:0 0 8px">{{ (site and site.nome_site) or 'Motel Bela Vista' }}</h1>
-      {% if site and site.descricao_breve %}
-        <p class="subtitle">{{ site.descricao_breve }}</p>
-      {% else %}
-        <p class="subtitle">Conforto, privacidade e atendimento 24h em Rio Pardo/RS.</p>
-      {% endif %}
+  <div class="card" style="display:flex; flex-direction:column; gap:10px; padding:28px">
+    <h1 style="margin:0 0 6px; font-size:1.8rem">{{ (site and site.nome_site) or 'Motel Bela Vista' }}</h1>
+    {% if site and site.descricao_breve %}
+      <p class="subtitle" style="font-size:1.05rem">{{ site.descricao_breve }}</p>
+    {% else %}
+      <p class="subtitle" style="font-size:1.05rem">Conforto, privacidade e atendimento 24h em Rio Pardo/RS.</p>
+    {% endif %}
+    <p class="subtitle" style="margin:4px 0 0; line-height:1.6">Todas as suítes com frigobar, ar-condicionado, tv smart, wi-fi, garagem privativa.</p>
+    <p class="subtitle" style="margin:2px 0 0; line-height:1.6">Suíte principal com banheira hidromassagem.</p>
+    <p class="subtitle" style="margin:2px 0 0; line-height:1.6">Além de todo o conforto e privacidade que nossas acomodações oferecem.</p>
+    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap">
+      <a class="btn" href="/quartos">Ver Suítes</a>
       {% if site and site.whatsapp %}
-        <div style="margin-top:12px">
-          <a class="btn" href="https://wa.me/55{{ site.whatsapp | replace('(', '') | replace(')', '') | replace('-', '') | replace(' ', '') }}?text=Olá%2C+gostaria+de+informações" target="_blank">Fale pelo WhatsApp</a>
-        </div>
+        <a class="btn" href="https://wa.me/55{{ site.whatsapp | replace('(', '') | replace(')', '') | replace('-', '') | replace(' ', '') }}?text=Olá%2C+gostaria+de+informações" target="_blank">Fale pelo WhatsApp</a>
       {% endif %}
     </div>
+  </div>
 
-    <div class="card">
-      <h2 style="margin:0 0 8px">Destaques</h2>
-      <div style="display:flex; gap:8px; flex-wrap:wrap">
-        <span class="badge">Ar-condicionado</span>
-        <span class="badge">Wi‑Fi</span>
-        <span class="badge">TV Smart</span>
-        <span class="badge">Hidromassagem</span>
+  <div style="margin-top:16px">
+    <h2 style="margin:0 0 12px">Nossas Suítes</h2>
+    {% if suites and suites|length %}
+      <div class="grid" style="grid-template-columns: repeat(2, minmax(0,1fr)); gap:16px">
+        {% for s in suites %}
+          <div class="card" style="overflow:hidden">
+            {% set cover = cover_map.get(s.id) %}
+            {% if cover %}
+              <img src="{{ cover.url }}" alt="{{ cover.legenda or s.titulo }}" style="width:100%; height:180px; object-fit:cover; border-radius:12px" />
+            {% endif %}
+            <div style="margin-top:10px">
+              <h3 style="margin:0 0 4px">{{ s.titulo }}</h3>
+              <div class="subtitle">{{ s.tipo and s.tipo.nome or '' }}</div>
+              {% set ams = amen_map.get(s.id) or [] %}
+              {% if ams %}
+                <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap">
+                  {% for a in ams[:6] %}
+                    <span class="badge">{{ a }}</span>
+                  {% endfor %}
+                  {% if ams|length > 6 %}<span class="subtitle">+{{ ams|length - 6 }} mais</span>{% endif %}
+                </div>
+              {% endif %}
+              <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
+                {% if s.preco_hora %}<span class="badge">R$ {{ '%.2f'|format(s.preco_hora) }}/h</span>{% endif %}
+                {% if s.preco_pernoite %}<span class="badge">Pernoite R$ {{ '%.2f'|format(s.preco_pernoite) }}</span>{% endif %}
+                {% if not s.preco_hora and not s.preco_pernoite %}<span class="subtitle">Consulte valores</span>{% endif %}
+              </div>
+              <div style="margin-top:10px">
+                <a class="btn" href="/suites/{{ s.slug }}">Ver detalhes</a>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
       </div>
-    </div>
+    {% else %}
+      <p class="subtitle">Em breve nossas suítes estarão disponíveis aqui.</p>
+    {% endif %}
   </div>
 {% endblock %}

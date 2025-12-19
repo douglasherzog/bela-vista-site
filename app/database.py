@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 # DATABASE_URL examples:
 # postgresql://user:pass@host:5432/db
 # postgresql+psycopg://user:pass@host:5432/db?sslmode=require
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/belavista")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./belavista.db")
 
 # Normalize URL to ensure psycopg3 driver is used
 if DATABASE_URL.startswith("postgres://"):
@@ -14,7 +14,8 @@ if DATABASE_URL.startswith("postgres://"):
 if DATABASE_URL.startswith("postgresql://") and "+" not in DATABASE_URL:
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=connect_args)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
