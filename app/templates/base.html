@@ -6,7 +6,7 @@
   <title>{% block title %}Motel Bela Vista — Rio Pardo/RS{% endblock %}</title>
   <link rel="icon" href="/static/img/logo.svg" type="image/svg+xml" />
   <style>
-    :root{ --bg:#0b1020; --card:#121a33; --muted:#9fb3d1; --text:#e8eef7; --primary:{{ (site and site.primary_color) or '#C2185B' }}; --accent:#ffd166; --danger:#ff6b6b; --radius:14px; }
+    :root{ --bg:#0b1020; --card:#121a33; --muted:#9fb3d1; --text:#e8eef7; --primary:#C2185B; --accent:#ffd166; --danger:#ff6b6b; --radius:14px; }
     *{ box-sizing:border-box }
     body{ margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial; background:var(--bg); color:var(--text) }
     a{ color:var(--primary); text-decoration:none }
@@ -38,7 +38,7 @@
     .actions{ margin-top:16px; display:flex; gap:10px; flex-wrap:wrap }
   </style>
 </head>
-<body>
+<body style="--primary: {{ (site and site.primary_color) or '#C2185B' }}">
   <header>
     <div class="container" style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
       <div class="brand">
@@ -46,6 +46,12 @@
         <div>
           <div class="title">Motel Bela Vista</div>
           <div class="subtitle">Rio Pardo/RS — conforto e privacidade — Atendimento 24h</div>
+          <div style="margin-top:8px; color:var(--muted)">
+            <span>Telefone/WhatsApp:</span>
+            <a href="https://wa.me/5551995843009?text=Ol%C3%A1%2C+gostaria+de+informa%C3%A7%C3%B5es" target="_blank">(51)99584-3009</a>
+            <span> | </span>
+            <a href="https://wa.me/5551995843002?text=Ol%C3%A1%2C+gostaria+de+informa%C3%A7%C3%B5es" target="_blank">(51)99584-3002</a>
+          </div>
         </div>
       </div>
       <nav style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -68,36 +74,28 @@
     <div class="container" style="padding:18px 24px;"></div>
   </footer>
 
-  {% if site and site.maps_embed_url %}
+  {% set endereco_padrao = 'Rua Guarani 212, Rio Pardo RS, CEP 96640-000, Brasil' %}
+  {% set endereco_mapa = (site.endereco if site and site.endereco else endereco_padrao) %}
+  {% set query_mapa = ('Motel Bela Vista, ' ~ endereco_mapa) %}
+  {% set maps_url = (site.maps_embed_url if site and site.maps_embed_url else ('https://www.google.com/maps?output=embed&q=' ~ (query_mapa | urlencode))) %}
   <div class="mapbar">
     <div class="wrap">
       <div class="info">
         <div class="line"><strong>Motel Bela Vista</strong></div>
-        <div class="line"><span class="label">Endereço:</span> {{ (site and site.endereco) or 'Rua Guarani, 212, Rio Pardo - RS' }}</div>
-        {% if site.telefone %}
-          <div class="line"><span class="label">Telefone:</span> {{ site.telefone }}</div>
-        {% endif %}
+        <div class="line"><span class="label">Endereço:</span> {{ endereco_mapa }}</div>
+        <div class="line"><span class="label">Telefone/WhatsApp:</span> <a href="https://wa.me/5551995843009?text=Ol%C3%A1%2C+gostaria+de+informa%C3%A7%C3%B5es" target="_blank">(51)99584-3009</a> | <a href="https://wa.me/5551995843002?text=Ol%C3%A1%2C+gostaria+de+informa%C3%A7%C3%B5es" target="_blank">(51)99584-3002</a></div>
         <div class="line"><span class="label">Horário:</span> Atendimento 24h</div>
         {% if site.email %}
           <div class="line"><span class="label">Email:</span> <a href="mailto:{{ site.email }}">{{ site.email }}</a></div>
         {% endif %}
-        {% if site.whatsapp %}
-          <div class="line"><span class="label">WhatsApp:</span> {{ site.whatsapp }}</div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap">
-            <a class="btn" href="https://wa.me/55{{ site.whatsapp | replace('(', '') | replace(')', '') | replace('-', '') | replace(' ', '') }}?text=Olá%2C+gostaria+de+informações" target="_blank">Fale pelo WhatsApp</a>
-            {% if site.endereco %}
-              <a class="btn" href="https://www.google.com/maps/search/?api=1&query={{ site.endereco | urlencode }}" target="_blank">Como chegar</a>
-            {% elif site.maps_embed_url %}
-              <a class="btn" href="{{ site.maps_embed_url }}" target="_blank">Como chegar</a>
-            {% endif %}
-          </div>
-        {% endif %}
+        <div style="display:flex; gap:10px; flex-wrap:wrap">
+          <a class="btn" href="https://www.google.com/maps/search/?api=1&query={{ query_mapa | urlencode }}" target="_blank">Como chegar</a>
+        </div>
       </div>
       <div>
-        <iframe src="{{ site.maps_embed_url }}" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        <iframe src="{{ maps_url }}" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
       </div>
     </div>
   </div>
-  {% endif %}
 </body>
 </html>
