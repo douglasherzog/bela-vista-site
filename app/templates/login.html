@@ -2,18 +2,22 @@
 {% block title %}Login — Motel Bela Vista{% endblock %}
 {% block content %}
   <div class="card" style="max-width:520px; margin:0 auto">
-    <h1 style="margin-top:0">Login</h1>
+    <h1 style="margin-top:0">{% if admin_mode %}Administração{% else %}Login{% endif %}</h1>
     {% if error %}
       <div class="badge" style="border-color:rgba(255,107,107,.45); background:rgba(255,107,107,.12); color:#ffdede">{{ error }}</div>
       <div style="height:10px"></div>
     {% endif %}
-    <form method="post" action="/login" class="form">
+    <form method="post" action="{{ form_action or '/login' }}" class="form">
+      {% if not admin_mode %}
+        <div class="field">
+          <label>Usuário</label>
+          <input name="username" autocomplete="username" required />
+        </div>
+      {% else %}
+        <input type="hidden" name="username" value="{{ username_prefill or '' }}" />
+      {% endif %}
       <div class="field">
-        <label>Usuário</label>
-        <input name="username" autocomplete="username" required />
-      </div>
-      <div class="field">
-        <label>Senha</label>
+        <label>Senha{% if admin_mode %} do admin{% endif %}</label>
         <input name="password" type="password" autocomplete="current-password" required />
       </div>
       <div class="actions">

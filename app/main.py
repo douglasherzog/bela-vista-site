@@ -1,4 +1,6 @@
 from fastapi import FastAPI, Request, Form, status, Depends
+from fastapi import HTTPException
+from fastapi.exception_handlers import http_exception_handler as fastapi_http_exception_handler
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -17,6 +19,7 @@ from .auth import (
 )
 from typing import List
 import re
+import os
 
 # Garantir criação das tabelas inicialmente (depois usaremos Alembic)
 Base.metadata.create_all(bind=engine)
@@ -53,6 +56,15 @@ templates_env = Environment(
 
 # Static
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+        path = request.url.path
+        if path.startswith("/admin") or path in ("/administracao", "/config"):
+            return RedirectResponse(url="/admin/login", status_code=status.HTTP_302_FOUND)
+    return await fastapi_http_exception_handler(request, exc)
 
 
 def _render(template_name: str, request: Request, **ctx):
@@ -110,20 +122,76 @@ async def contato(request: Request):
 async def login_get(request: Request):
     if get_current_user(request):
         return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
-    return _render("login.html", request, error=None)
+    with get_session() as db:
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("login.html", request, site=site, error=None, admin_mode=False)
 
 
 @app.post("/login")
 async def login_post(request: Request, username: str = Form(""), password: str = Form("")):
     with get_session() as db:
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
         user = db.execute(select(User).where(User.username == username).limit(1)).scalar_one_or_none()
     if not user or user.status != "ativo" or not verify_password(password, user.password_hash):
-        return HTMLResponse(_render("login.html", request, error="Usuário ou senha inválidos"), status_code=401)
+        return HTMLResponse(
+            _render("login.html", request, site=site, error="Usuário ou senha inválidos", admin_mode=False),
+            status_code=401,
+        )
 
     resp = RedirectResponse(
         url=("/administracao" if user.role == "admin" else "/funcionarios"),
         status_code=status.HTTP_302_FOUND,
     )
+    resp.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=sign_session(user.id),
+        httponly=True,
+        samesite="lax",
+        secure=(request.url.scheme == "https"),
+        path="/",
+    )
+    return resp
+
+
+@app.get("/admin/login", response_class=HTMLResponse)
+async def admin_login_get(request: Request):
+    if get_current_user(request):
+        return RedirectResponse(url="/administracao", status_code=status.HTTP_302_FOUND)
+    admin_user = (os.getenv("ADMIN_USER") or "admin")
+    with get_session() as db:
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render(
+        "login.html",
+        request,
+        site=site,
+        error=None,
+        admin_mode=True,
+        username_prefill=admin_user,
+        form_action="/admin/login",
+    )
+
+
+@app.post("/admin/login")
+async def admin_login_post(request: Request, password: str = Form("")):
+    admin_user = (os.getenv("ADMIN_USER") or "admin")
+    with get_session() as db:
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+        user = db.execute(select(User).where(User.username == admin_user).limit(1)).scalar_one_or_none()
+    if not user or user.status != "ativo" or user.role != "admin" or not verify_password(password, user.password_hash):
+        return HTMLResponse(
+            _render(
+                "login.html",
+                request,
+                site=site,
+                error="Senha inválida",
+                admin_mode=True,
+                username_prefill=admin_user,
+                form_action="/admin/login",
+            ),
+            status_code=401,
+        )
+
+    resp = RedirectResponse(url="/administracao", status_code=status.HTTP_302_FOUND)
     resp.set_cookie(
         key=SESSION_COOKIE_NAME,
         value=sign_session(user.id),
