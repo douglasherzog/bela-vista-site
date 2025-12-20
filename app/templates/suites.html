@@ -12,7 +12,7 @@
     {% endif %}
 
     {% if suites and suites|length %}
-      <div class="grid" style="grid-template-columns: repeat(2, minmax(0,1fr));">
+      <div class="grid cols-2">
         {% for s in suites %}
           <a href="/suites/{{ s.slug }}" class="card" style="display:block">
             <div style="display:flex; align-items:center; gap:12px;">
