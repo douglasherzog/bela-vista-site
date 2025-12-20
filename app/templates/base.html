@@ -3,6 +3,49 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  {% set site_url = 'https://www.motelbelavista.com.br' %}
+  {% set canonical_url = site_url ~ (request.url.path if request else '/') %}
+  <meta name="robots" content="index,follow" />
+  <meta name="description" content="{% block meta_description %}Motel Bela Vista em Rio Pardo/RS. Conforto, privacidade e atendimento 24h.{% endblock %}" />
+  <link rel="canonical" href="{{ canonical_url }}" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Motel Bela Vista" />
+  <meta property="og:title" content="{% block og_title %}Motel Bela Vista — Rio Pardo/RS{% endblock %}" />
+  <meta property="og:description" content="{% block og_description %}Motel Bela Vista em Rio Pardo/RS. Conforto, privacidade e atendimento 24h.{% endblock %}" />
+  <meta property="og:url" content="{{ canonical_url }}" />
+  <meta property="og:image" content="{{ site_url }}/static/img/logo.svg" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="{% block twitter_title %}Motel Bela Vista — Rio Pardo/RS{% endblock %}" />
+  <meta name="twitter:description" content="{% block twitter_description %}Motel Bela Vista em Rio Pardo/RS. Conforto, privacidade e atendimento 24h.{% endblock %}" />
+  <meta name="twitter:image" content="{{ site_url }}/static/img/logo.svg" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "Motel Bela Vista",
+    "url": "{{ site_url }}/",
+    "image": "{{ site_url }}/static/img/logo.svg",
+    "telephone": ["+55 51 99584-3009", "+55 51 99584-3002"],
+    "email": "{% if site.email %}{{ site.email }}{% else %}motelbelavistarp@gmail.com{% endif %}",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Rua Guarani 212",
+      "addressLocality": "Rio Pardo",
+      "addressRegion": "RS",
+      "postalCode": "96640-000",
+      "addressCountry": "BR"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": -29.97660778754643,
+      "longitude": -52.37178154232816
+    },
+    "hasMap": "https://www.google.com/maps/search/?api=1&query=Motel%20Bela%20Vista%2C%20Rua%20Guarani%20212%2C%20Rio%20Pardo%20RS%2C%20CEP%2096640-000%2C%20Brasil"
+  }
+  </script>
   <title>{% block title %}Motel Bela Vista — Rio Pardo/RS{% endblock %}</title>
   <link rel="icon" href="/static/img/logo.svg" type="image/svg+xml" />
   <style>
@@ -87,6 +130,8 @@
         <div class="line"><span class="label">Horário:</span> Atendimento 24h</div>
         {% if site.email %}
           <div class="line"><span class="label">Email:</span> <a href="mailto:{{ site.email }}">{{ site.email }}</a></div>
+        {% else %}
+          <div class="line"><span class="label">Email:</span> <a href="mailto:motelbelavistarp@gmail.com">motelbelavistarp@gmail.com</a></div>
         {% endif %}
         <div style="display:flex; gap:10px; flex-wrap:wrap">
           <a class="btn" href="https://www.google.com/maps/search/?api=1&query={{ query_mapa | urlencode }}" target="_blank">Como chegar</a>

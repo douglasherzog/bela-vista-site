@@ -23,11 +23,9 @@
             {% endfor %}
           </div>
         {% endif %}
-        {% if site and site.whatsapp %}
-          <div style="margin-top:12px">
-            <a class="btn" href="https://wa.me/55{{ site.whatsapp | replace('(', '') | replace(')', '') | replace('-', '') | replace(' ', '') }}?text=Olá%2C+quero+informações+sobre+a+suíte+{{ suite.titulo | urlencode }}" target="_blank">Reservar pelo WhatsApp</a>
-          </div>
-        {% endif %}
+        <div style="margin-top:12px">
+          <a class="btn" href="https://wa.me/5551995843009?text=Ol%C3%A1%2C+quero+informa%C3%A7%C3%B5es+sobre+a+su%C3%ADte+{{ suite.titulo | urlencode }}" target="_blank">Reservar pelo WhatsApp</a>
+        </div>
       </div>
 
       <div class="card">

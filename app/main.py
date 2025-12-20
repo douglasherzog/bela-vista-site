@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Form, status, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sqlalchemy import select
@@ -29,6 +29,8 @@ except Exception:
     pass
 
 app = FastAPI(title="Motel Bela Vista - Rio Pardo/RS")
+
+SITE_URL = "https://www.motelbelavista.com.br"
 
 # Templates Jinja
 templates_env = Environment(
@@ -68,7 +70,7 @@ async def home(request: Request):
             for sid, anome in rows:
                 amen_map.setdefault(sid, []).append(anome)
     t = templates_env.get_template("index.html")
-    return t.render(site=site, suites=suites, cover_map=cover_map, amen_map=amen_map)
+    return t.render(request=request, site=site, suites=suites, cover_map=cover_map, amen_map=amen_map)
 
 
 @app.get("/sobre", response_class=HTMLResponse)
@@ -76,7 +78,7 @@ async def sobre(request: Request):
     with get_session() as db:
         site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
     t = templates_env.get_template("sobre.html")
-    return t.render(site=site)
+    return t.render(request=request, site=site)
 
 
 @app.get("/contato", response_class=HTMLResponse)
@@ -84,7 +86,39 @@ async def contato(request: Request):
     with get_session() as db:
         site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
     t = templates_env.get_template("contato.html")
-    return t.render(site=site)
+    return t.render(request=request, site=site)
+
+
+@app.get("/robots.txt", response_class=PlainTextResponse)
+async def robots_txt() -> str:
+    return f"""User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}/sitemap.xml\n"""
+
+
+@app.get("/sitemap.xml")
+async def sitemap_xml() -> Response:
+    urls: list[str] = [
+        f"{SITE_URL}/",
+        f"{SITE_URL}/sobre",
+        f"{SITE_URL}/contato",
+        f"{SITE_URL}/quartos",
+        f"{SITE_URL}/suites",
+    ]
+    with get_session() as db:
+        slugs = db.execute(select(Suite.slug).where(Suite.status == "ativo").order_by(Suite.slug.asc())).scalars().all()
+    for slug in slugs:
+        urls.append(f"{SITE_URL}/suites/{slug}")
+
+    body = [
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+        "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">",
+    ]
+    for u in urls:
+        body.append("  <url>")
+        body.append(f"    <loc>{u}</loc>")
+        body.append("  </url>")
+    body.append("</urlset>")
+    xml = "\n".join(body) + "\n"
+    return Response(content=xml, media_type="application/xml")
 
 
 # ---------------------- Administração ----------------------
@@ -428,21 +462,25 @@ async def suites_public_list(request: Request):
         tipos = db.execute(select(TipoSuite).order_by(TipoSuite.ordem.asc(), TipoSuite.nome.asc())).scalars().all()
         suites = db.execute(select(Suite).options(selectinload(Suite.tipo)).order_by(Suite.ordem.asc(), Suite.titulo.asc())).scalars().all()
     t = templates_env.get_template("suites.html")
-    return t.render(site=site, tipos=tipos, suites=suites)
+    return t.render(request=request, site=site, tipos=tipos, suites=suites)
 
 
 @app.get("/suites/{slug}", response_class=HTMLResponse)
-async def suite_public_detail(slug: str):
+async def suite_public_detail(request: Request, slug: str):
     with get_session() as db:
         site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
-        suite = db.execute(select(Suite).where(Suite.slug == slug)).scalar_one_or_none()
+        suite = db.execute(
+            select(Suite)
+            .where(Suite.slug == slug)
+            .options(selectinload(Suite.tipo), selectinload(Suite.amenidades))
+        ).scalar_one_or_none()
         fotos = []
         if suite:
             fotos = db.execute(
                 select(Foto).where(Foto.suite_id == suite.id).order_by(Foto.capa.desc(), Foto.ordem.asc())
             ).scalars().all()
     t = templates_env.get_template("suite_detail.html")
-    return t.render(site=site, suite=suite, fotos=fotos)
+    return t.render(request=request, site=site, suite=suite, fotos=fotos)
 
 
 # ---------------------- Público: Quartos (com painéis) ----------------------
@@ -475,4 +513,4 @@ async def quartos_public_list(request: Request):
             for sid, anome in rows:
                 amen_map.setdefault(sid, []).append(anome)
     t = templates_env.get_template("quartos.html")
-    return t.render(site=site, suites=suites, cover_map=cover_map, amen_map=amen_map)
+    return t.render(request=request, site=site, suites=suites, cover_map=cover_map, amen_map=amen_map)
