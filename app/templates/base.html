@@ -96,10 +96,11 @@
       .logo{ width:42px; height:42px }
       .title{ font-size:1.05rem }
       .subtitle{ font-size:.95rem }
-      .contact-line{ font-size:.92rem }
+      .contact-line{ font-size:.92rem; flex-direction:column; align-items:flex-start }
+      .contact-line a{ display:block }
+      .contact-line .sep{ display:none }
       header .container{ flex-direction:column; align-items:flex-start !important }
-      nav{ width:100% }
-      nav .btn{ width:100%; justify-content:center }
+      nav{ display:none }
       .btn{ padding:11px 14px }
       .grid.cols-2{ grid-template-columns:1fr }
       .price-table{ min-width:460px }
@@ -130,7 +131,7 @@
           <div class="contact-line">
             <span>Telefone/WhatsApp:</span>
             <a href="https://wa.me/5551995843009?text=Ol%C3%A1%2C+gostaria+de+informa%C3%A7%C3%B5es" target="_blank">(51)99584-3009</a>
-            <span> | </span>
+            <span class="sep"> | </span>
             <a href="https://wa.me/5551995843002?text=Ol%C3%A1%2C+gostaria+de+informa%C3%A7%C3%B5es" target="_blank">(51)99584-3002</a>
           </div>
         </div>
