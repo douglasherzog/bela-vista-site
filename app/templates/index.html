@@ -12,47 +12,66 @@
     <p class="subtitle" style="margin:2px 0 0; line-height:1.6">Suíte principal com banheira hidromassagem.</p>
     <p class="subtitle" style="margin:2px 0 0; line-height:1.6">Além de todo o conforto e privacidade que nossas acomodações oferecem.</p>
     <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap">
-      <a class="btn" href="/quartos">Ver Suítes</a>
+      <a class="btn" href="/quartos">Ver Apartamentos</a>
       <a class="btn" href="https://wa.me/5551995843009?text=Ol%C3%A1%2C+gostaria+de+informa%C3%A7%C3%B5es" target="_blank">Fale pelo WhatsApp</a>
     </div>
   </div>
 
-  <div style="margin-top:16px">
-    <h2 style="margin:0 0 12px">Nossas Suítes</h2>
-    {% if suites and suites|length %}
-      <div class="grid" style="grid-template-columns: repeat(2, minmax(0,1fr)); gap:16px">
-        {% for s in suites %}
-          <div class="card" style="overflow:hidden">
-            {% set cover = cover_map.get(s.id) %}
-            {% if cover %}
-              <img src="{{ cover.url }}" alt="{{ cover.legenda or s.titulo }}" style="width:100%; height:180px; object-fit:cover; border-radius:12px" />
-            {% endif %}
-            <div style="margin-top:10px">
-              <h3 style="margin:0 0 4px">{{ s.titulo }}</h3>
-              <div class="subtitle">{{ s.tipo and s.tipo.nome or '' }}</div>
-              {% set ams = amen_map.get(s.id) or [] %}
-              {% if ams %}
-                <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap">
-                  {% for a in ams[:6] %}
-                    <span class="badge">{{ a }}</span>
-                  {% endfor %}
-                  {% if ams|length > 6 %}<span class="subtitle">+{{ ams|length - 6 }} mais</span>{% endif %}
-                </div>
-              {% endif %}
-              <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
-                {% if s.preco_hora %}<span class="badge">R$ {{ '%.2f'|format(s.preco_hora) }}/h</span>{% endif %}
-                {% if s.preco_pernoite %}<span class="badge">Pernoite R$ {{ '%.2f'|format(s.preco_pernoite) }}</span>{% endif %}
-                {% if not s.preco_hora and not s.preco_pernoite %}<span class="subtitle">Consulte valores</span>{% endif %}
-              </div>
-              <div style="margin-top:10px">
-                <a class="btn" href="/suites/{{ s.slug }}">Ver detalhes</a>
-              </div>
-            </div>
-          </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <p class="subtitle">Em breve nossas suítes estarão disponíveis aqui.</p>
-    {% endif %}
+  <div class="card" style="margin-top:16px">
+    <h2 style="margin:0 0 10px">Tabela de preços</h2>
+    <div style="overflow:auto">
+      <table style="width:100%; min-width:520px; border-collapse:collapse">
+        <thead>
+          <tr style="text-align:left; color:#a9b9d4">
+            <th style="padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.08)">Hora</th>
+            <th style="padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.08)">Apartamento</th>
+            <th style="padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.08)">Suíte</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:10px 10px">00:00 às 01:00</td>
+            <td style="padding:10px 10px">R$ 85,00</td>
+            <td style="padding:10px 10px">R$ 130,00</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 10px">01:00 às 01:30</td>
+            <td style="padding:10px 10px">R$ 110,00</td>
+            <td style="padding:10px 10px">R$ 160,00</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 10px">01:30 às 02:00</td>
+            <td style="padding:10px 10px">R$ 145,00</td>
+            <td style="padding:10px 10px">R$ 190,00</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 10px">02:00 às 02:30</td>
+            <td style="padding:10px 10px">R$ 160,00</td>
+            <td style="padding:10px 10px">R$ 220,00</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 10px">02:30 às 03:00</td>
+            <td style="padding:10px 10px">R$ 180,00</td>
+            <td style="padding:10px 10px">R$ 235,00</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 10px">03:00 às 03:30</td>
+            <td style="padding:10px 10px">R$ 195,00</td>
+            <td style="padding:10px 10px">R$ 250,00</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 10px">03:30 às 04:00</td>
+            <td style="padding:10px 10px">R$ 220,00</td>
+            <td style="padding:10px 10px">R$ 280,00</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 10px">04:00 às 12:00</td>
+            <td style="padding:10px 10px">R$ 240,00</td>
+            <td style="padding:10px 10px">R$ 320,00</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="subtitle" style="margin-top:10px">Valores válidos para casal.</div>
   </div>
 {% endblock %}
