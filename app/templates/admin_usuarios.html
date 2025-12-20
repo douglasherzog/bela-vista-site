@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Usuários — Administração{% endblock %}
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+  <h1 style="margin:0">Usuários</h1>
+  <a class="btn" href="/admin/usuarios/novo">Novo usuário</a>
+</div>
+<div class="card">
+  {% if items and items|length > 0 %}
+  <table style="width:100%; border-collapse:collapse">
+    <thead>
+      <tr style="text-align:left; color:#a9b9d4">
+        <th style="padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.08)">Usuário</th>
+        <th style="padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.08)">Role</th>
+        <th style="padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.08)">Status</th>
+        <th style="padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.08)"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in items %}
+      <tr>
+        <td style="padding:10px 10px">{{ u.username }}</td>
+        <td style="padding:10px 10px">{{ u.role }}</td>
+        <td style="padding:10px 10px">{{ u.status }}</td>
+        <td style="padding:10px 10px; display:flex; gap:8px">
+          <a class="btn" href="/admin/usuarios/editar/{{ u.id }}">Editar</a>
+          <form method="post" action="/admin/usuarios/excluir/{{ u.id }}" onsubmit="return confirm('Excluir?')">
+            <button class="btn" type="submit">Excluir</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div style="color:#a9b9d4">Nenhum usuário cadastrado.</div>
+  {% endif %}
+</div>
+{% endblock %}

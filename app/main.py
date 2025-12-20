@@ -5,13 +5,26 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from .database import Base, engine, get_session
-from .models import SiteConfig, TipoSuite, Amenidade, Suite, Foto, Funcionario
-from .auth import require_basic_auth
+from .models import SiteConfig, TipoSuite, Amenidade, Suite, Foto, Funcionario, User
+from .auth import (
+    bootstrap_admin_user,
+    get_current_user,
+    require_role,
+    sign_session,
+    verify_password,
+    SESSION_COOKIE_NAME,
+    hash_password,
+)
 from typing import List
 import re
 
 # Garantir criação das tabelas inicialmente (depois usaremos Alembic)
 Base.metadata.create_all(bind=engine)
+
+try:
+    bootstrap_admin_user()
+except Exception:
+    pass
 
 # Migração leve: adicionar coluna 'email' em SiteConfig no SQLite, se não existir
 try:
@@ -42,6 +55,13 @@ templates_env = Environment(
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 
+def _render(template_name: str, request: Request, **ctx):
+    ctx.setdefault("request", request)
+    ctx.setdefault("current_user", get_current_user(request))
+    t = templates_env.get_template(template_name)
+    return t.render(**ctx)
+
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     with get_session() as db:
@@ -69,24 +89,57 @@ async def home(request: Request):
             ).all()
             for sid, anome in rows:
                 amen_map.setdefault(sid, []).append(anome)
-    t = templates_env.get_template("index.html")
-    return t.render(request=request, site=site, suites=suites, cover_map=cover_map, amen_map=amen_map)
+    return _render("index.html", request, site=site, suites=suites, cover_map=cover_map, amen_map=amen_map)
 
 
 @app.get("/sobre", response_class=HTMLResponse)
 async def sobre(request: Request):
     with get_session() as db:
         site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
-    t = templates_env.get_template("sobre.html")
-    return t.render(request=request, site=site)
+    return _render("sobre.html", request, site=site)
 
 
 @app.get("/contato", response_class=HTMLResponse)
 async def contato(request: Request):
     with get_session() as db:
         site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
-    t = templates_env.get_template("contato.html")
-    return t.render(request=request, site=site)
+    return _render("contato.html", request, site=site)
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_get(request: Request):
+    if get_current_user(request):
+        return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+    return _render("login.html", request, error=None)
+
+
+@app.post("/login")
+async def login_post(request: Request, username: str = Form(""), password: str = Form("")):
+    with get_session() as db:
+        user = db.execute(select(User).where(User.username == username).limit(1)).scalar_one_or_none()
+    if not user or user.status != "ativo" or not verify_password(password, user.password_hash):
+        return HTMLResponse(_render("login.html", request, error="Usuário ou senha inválidos"), status_code=401)
+
+    resp = RedirectResponse(
+        url=("/administracao" if user.role == "admin" else "/funcionarios"),
+        status_code=status.HTTP_302_FOUND,
+    )
+    resp.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=sign_session(user.id),
+        httponly=True,
+        samesite="lax",
+        secure=(request.url.scheme == "https"),
+        path="/",
+    )
+    return resp
+
+
+@app.post("/logout")
+async def logout_post(_: Request):
+    resp = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+    resp.delete_cookie(key=SESSION_COOKIE_NAME, path="/")
+    return resp
 
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
@@ -121,19 +174,27 @@ async def sitemap_xml() -> Response:
     return Response(content=xml, media_type="application/xml")
 
 
+@app.get("/funcionarios", response_class=HTMLResponse)
+async def funcionarios_dashboard(request: Request, current_user: User = Depends(require_role("funcionario", "admin"))):
+    with get_session() as db:
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("funcionarios_dashboard.html", request, site=site, current_user=current_user)
+
+
 # ---------------------- Administração ----------------------
 
 @app.get("/administracao", response_class=HTMLResponse)
-async def admin_dashboard(_: bool = Depends(require_basic_auth)):
-    t = templates_env.get_template("admin_dashboard.html")
-    return t.render()
+async def admin_dashboard(request: Request, current_user: User = Depends(require_role("admin"))):
+    with get_session() as db:
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("admin_dashboard.html", request, site=site, current_user=current_user)
 
 @app.get("/config", response_class=HTMLResponse)
-async def config_get(request: Request, _: bool = Depends(require_basic_auth)):
+async def config_get(request: Request, _: User = Depends(require_role("admin"))):
     with get_session() as db:
         site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
     t = templates_env.get_template("config.html")
-    return t.render(site=site)
+    return t.render(request=request, site=site, current_user=get_current_user(request))
 
 
 @app.post("/config")
@@ -146,7 +207,7 @@ async def config_post(
     email: str = Form(""),
     primaryColor: str = Form(""),
     mapsEmbedUrl: str = Form(""),
-    _: bool = Depends(require_basic_auth),
+    _: User = Depends(require_role("admin")),
 ):
     with get_session() as db:
         site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
@@ -175,27 +236,20 @@ async def config_post(
     return RedirectResponse(url="/config", status_code=status.HTTP_302_FOUND)
 
 
-# ---------------------- Util ----------------------
-def slugify(text: str) -> str:
-    text = text.lower().strip()
-    text = re.sub(r"[^a-z0-9\s-]", "", text)
-    text = re.sub(r"[\s-]+", "-", text)
-    return text
-
-
-# ---------------------- CRUD: Tipos de Suíte ----------------------
+# ---------------------- Admin: Tipos de Suíte ----------------------
 @app.get("/admin/tipos", response_class=HTMLResponse)
-async def tipos_list(_: bool = Depends(require_basic_auth)):
+async def tipos_list(request: Request, _: User = Depends(require_role("admin"))):
     with get_session() as db:
         items = db.execute(select(TipoSuite).order_by(TipoSuite.ordem.asc(), TipoSuite.nome.asc())).scalars().all()
-    t = templates_env.get_template("admin_tipos.html")
-    return t.render(items=items)
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("admin_tipos.html", request, site=site, items=items)
 
 
 @app.get("/admin/tipos/novo", response_class=HTMLResponse)
-async def tipos_new(_: bool = Depends(require_basic_auth)):
-    t = templates_env.get_template("admin_tipos_form.html")
-    return t.render(item=None)
+async def tipos_new(request: Request, _: User = Depends(require_role("admin"))):
+    with get_session() as db:
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("admin_tipos_form.html", request, site=site, item=None)
 
 
 @app.post("/admin/tipos/novo")
@@ -203,7 +257,7 @@ async def tipos_create(
     nome: str = Form(""),
     descricao: str = Form(""),
     ordem: int = Form(0),
-    _: bool = Depends(require_basic_auth),
+    _: User = Depends(require_role("admin")),
 ):
     with get_session() as db:
         item = TipoSuite(nome=nome, descricao=descricao or None, ordem=ordem or 0)
@@ -213,11 +267,11 @@ async def tipos_create(
 
 
 @app.get("/admin/tipos/editar/{id}", response_class=HTMLResponse)
-async def tipos_edit(id: int, _: bool = Depends(require_basic_auth)):
+async def tipos_edit(request: Request, id: int, _: User = Depends(require_role("admin"))):
     with get_session() as db:
         item = db.get(TipoSuite, id)
-    t = templates_env.get_template("admin_tipos_form.html")
-    return t.render(item=item)
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("admin_tipos_form.html", request, site=site, item=item)
 
 
 @app.post("/admin/tipos/editar/{id}")
@@ -226,7 +280,7 @@ async def tipos_update(
     nome: str = Form(""),
     descricao: str = Form(""),
     ordem: int = Form(0),
-    _: bool = Depends(require_basic_auth),
+    _: User = Depends(require_role("admin")),
 ):
     with get_session() as db:
         item = db.get(TipoSuite, id)
@@ -239,7 +293,7 @@ async def tipos_update(
 
 
 @app.post("/admin/tipos/excluir/{id}")
-async def tipos_delete(id: int, _: bool = Depends(require_basic_auth)):
+async def tipos_delete(id: int, _: User = Depends(require_role("admin"))):
     with get_session() as db:
         item = db.get(TipoSuite, id)
         if item:
@@ -248,26 +302,27 @@ async def tipos_delete(id: int, _: bool = Depends(require_basic_auth)):
     return RedirectResponse(url="/admin/tipos", status_code=status.HTTP_302_FOUND)
 
 
-# ---------------------- CRUD: Amenidades ----------------------
+# ---------------------- Admin: Amenidades ----------------------
 @app.get("/admin/amenidades", response_class=HTMLResponse)
-async def amenidades_list(_: bool = Depends(require_basic_auth)):
+async def amenidades_list(request: Request, _: User = Depends(require_role("admin"))):
     with get_session() as db:
         items = db.execute(select(Amenidade).order_by(Amenidade.nome.asc())).scalars().all()
-    t = templates_env.get_template("admin_amenidades.html")
-    return t.render(items=items)
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("admin_amenidades.html", request, site=site, items=items)
 
 
 @app.get("/admin/amenidades/novo", response_class=HTMLResponse)
-async def amenidades_new(_: bool = Depends(require_basic_auth)):
-    t = templates_env.get_template("admin_amenidades_form.html")
-    return t.render(item=None)
+async def amenidades_new(request: Request, _: User = Depends(require_role("admin"))):
+    with get_session() as db:
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("admin_amenidades_form.html", request, site=site, item=None)
 
 
 @app.post("/admin/amenidades/novo")
 async def amenidades_create(
     nome: str = Form(""),
     icone: str = Form(""),
-    _: bool = Depends(require_basic_auth),
+    _: User = Depends(require_role("admin")),
 ):
     with get_session() as db:
         item = Amenidade(nome=nome, icone=icone or None)
@@ -277,11 +332,11 @@ async def amenidades_create(
 
 
 @app.get("/admin/amenidades/editar/{id}", response_class=HTMLResponse)
-async def amenidades_edit(id: int, _: bool = Depends(require_basic_auth)):
+async def amenidades_edit(request: Request, id: int, _: User = Depends(require_role("admin"))):
     with get_session() as db:
         item = db.get(Amenidade, id)
-    t = templates_env.get_template("admin_amenidades_form.html")
-    return t.render(item=item)
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("admin_amenidades_form.html", request, site=site, item=item)
 
 
 @app.post("/admin/amenidades/editar/{id}")
@@ -289,7 +344,7 @@ async def amenidades_update(
     id: int,
     nome: str = Form(""),
     icone: str = Form(""),
-    _: bool = Depends(require_basic_auth),
+    _: User = Depends(require_role("admin")),
 ):
     with get_session() as db:
         item = db.get(Amenidade, id)
@@ -301,7 +356,7 @@ async def amenidades_update(
 
 
 @app.post("/admin/amenidades/excluir/{id}")
-async def amenidades_delete(id: int, _: bool = Depends(require_basic_auth)):
+async def amenidades_delete(id: int, _: User = Depends(require_role("admin"))):
     with get_session() as db:
         item = db.get(Amenidade, id)
         if item:
@@ -310,23 +365,23 @@ async def amenidades_delete(id: int, _: bool = Depends(require_basic_auth)):
     return RedirectResponse(url="/admin/amenidades", status_code=status.HTTP_302_FOUND)
 
 
-# ---------------------- CRUD: Suítes ----------------------
+# ---------------------- Admin: Suítes ----------------------
 @app.get("/admin/suites", response_class=HTMLResponse)
-async def suites_list(_: bool = Depends(require_basic_auth)):
+async def suites_list(request: Request, _: User = Depends(require_role("admin"))):
     with get_session() as db:
         items = db.execute(select(Suite).options(selectinload(Suite.tipo)).order_by(Suite.ordem.asc(), Suite.titulo.asc())).scalars().all()
         tipos = db.execute(select(TipoSuite).order_by(TipoSuite.nome.asc())).scalars().all()
-    t = templates_env.get_template("admin_suites.html")
-    return t.render(items=items, tipos=tipos)
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("admin_suites.html", request, site=site, items=items, tipos=tipos)
 
 
 @app.get("/admin/suites/novo", response_class=HTMLResponse)
-async def suites_new(_: bool = Depends(require_basic_auth)):
+async def suites_new(request: Request, _: User = Depends(require_role("admin"))):
     with get_session() as db:
         tipos = db.execute(select(TipoSuite).order_by(TipoSuite.nome.asc())).scalars().all()
         amenidades = db.execute(select(Amenidade).order_by(Amenidade.nome.asc())).scalars().all()
-    t = templates_env.get_template("admin_suites_form.html")
-    return t.render(item=None, tipos=tipos, amenidades=amenidades)
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("admin_suites_form.html", request, site=site, item=None, tipos=tipos, amenidades=amenidades)
 
 
 @app.post("/admin/suites/novo")
@@ -340,7 +395,7 @@ async def suites_create(
     destaque: str = Form(""),
     ordem: int = Form(0),
     amenidades_ids: List[int] = Form(default=[]),
-    _: bool = Depends(require_basic_auth),
+    _: User = Depends(require_role("admin")),
 ):
     with get_session() as db:
         s = Suite(
@@ -361,13 +416,13 @@ async def suites_create(
 
 
 @app.get("/admin/suites/editar/{id}", response_class=HTMLResponse)
-async def suites_edit(id: int, _: bool = Depends(require_basic_auth)):
+async def suites_edit(request: Request, id: int, _: User = Depends(require_role("admin"))):
     with get_session() as db:
         item = db.get(Suite, id)
         tipos = db.execute(select(TipoSuite).order_by(TipoSuite.nome.asc())).scalars().all()
         amenidades = db.execute(select(Amenidade).order_by(Amenidade.nome.asc())).scalars().all()
-    t = templates_env.get_template("admin_suites_form.html")
-    return t.render(item=item, tipos=tipos, amenidades=amenidades)
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("admin_suites_form.html", request, site=site, item=item, tipos=tipos, amenidades=amenidades)
 
 
 @app.post("/admin/suites/editar/{id}")
@@ -382,7 +437,7 @@ async def suites_update(
     destaque: str = Form(""),
     ordem: int = Form(0),
     amenidades_ids: List[int] = Form(default=[]),
-    _: bool = Depends(require_basic_auth),
+    _: User = Depends(require_role("admin")),
 ):
     with get_session() as db:
         s = db.get(Suite, id)
@@ -402,7 +457,7 @@ async def suites_update(
 
 
 @app.post("/admin/suites/excluir/{id}")
-async def suites_delete(id: int, _: bool = Depends(require_basic_auth)):
+async def suites_delete(id: int, _: User = Depends(require_role("admin"))):
     with get_session() as db:
         s = db.get(Suite, id)
         if s:
@@ -411,14 +466,14 @@ async def suites_delete(id: int, _: bool = Depends(require_basic_auth)):
     return RedirectResponse(url="/admin/suites", status_code=status.HTTP_302_FOUND)
 
 
-# ---------------------- CRUD: Fotos (por suíte) ----------------------
+# ---------------------- Admin: Fotos ----------------------
 @app.get("/admin/suites/{suite_id}/fotos", response_class=HTMLResponse)
-async def fotos_list(suite_id: int, _: bool = Depends(require_basic_auth)):
+async def fotos_list(request: Request, suite_id: int, _: User = Depends(require_role("admin"))):
     with get_session() as db:
         suite = db.get(Suite, suite_id)
         fotos = db.execute(select(Foto).where(Foto.suite_id == suite_id).order_by(Foto.ordem.asc())).scalars().all()
-    t = templates_env.get_template("admin_fotos.html")
-    return t.render(suite=suite, fotos=fotos)
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("admin_fotos.html", request, site=site, suite=suite, fotos=fotos)
 
 
 @app.post("/admin/suites/{suite_id}/fotos/novo")
@@ -428,7 +483,7 @@ async def fotos_create(
     legenda: str = Form(""),
     ordem: int = Form(0),
     capa: str = Form(""),
-    _: bool = Depends(require_basic_auth),
+    _: User = Depends(require_role("admin")),
 ):
     with get_session() as db:
         f = Foto(
@@ -444,7 +499,7 @@ async def fotos_create(
 
 
 @app.post("/admin/fotos/excluir/{id}")
-async def fotos_delete(id: int, _: bool = Depends(require_basic_auth)):
+async def fotos_delete(id: int, _: User = Depends(require_role("admin"))):
     with get_session() as db:
         f = db.get(Foto, id)
         suite_id = f.suite_id if f else None
@@ -454,6 +509,98 @@ async def fotos_delete(id: int, _: bool = Depends(require_basic_auth)):
     return RedirectResponse(url=f"/admin/suites/{suite_id}/fotos", status_code=status.HTTP_302_FOUND)
 
 
+@app.get("/admin/usuarios", response_class=HTMLResponse)
+async def users_list(request: Request, current_user: User = Depends(require_role("admin"))):
+    with get_session() as db:
+        items = db.execute(select(User).order_by(User.role.asc(), User.username.asc())).scalars().all()
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("admin_usuarios.html", request, site=site, current_user=current_user, items=items)
+
+
+@app.get("/admin/usuarios/novo", response_class=HTMLResponse)
+async def users_new(request: Request, current_user: User = Depends(require_role("admin"))):
+    with get_session() as db:
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("admin_usuarios_form.html", request, site=site, current_user=current_user, item=None)
+
+
+@app.post("/admin/usuarios/novo")
+async def users_create(
+    request: Request,
+    username: str = Form(""),
+    password: str = Form(""),
+    role: str = Form("funcionario"),
+    status_val: str = Form("ativo"),
+    _: User = Depends(require_role("admin")),
+):
+    if role not in ("admin", "funcionario"):
+        role = "funcionario"
+    if status_val not in ("ativo", "inativo"):
+        status_val = "ativo"
+    if not username or not password:
+        return RedirectResponse(url="/admin/usuarios/novo", status_code=status.HTTP_302_FOUND)
+    with get_session() as db:
+        exists = db.execute(select(User).where(User.username == username).limit(1)).scalar_one_or_none()
+        if exists:
+            return RedirectResponse(url="/admin/usuarios", status_code=status.HTTP_302_FOUND)
+        u = User(username=username, password_hash=hash_password(password), role=role, status=status_val)
+        db.add(u)
+        db.commit()
+    return RedirectResponse(url="/admin/usuarios", status_code=status.HTTP_302_FOUND)
+
+
+@app.get("/admin/usuarios/editar/{id}", response_class=HTMLResponse)
+async def users_edit(request: Request, id: int, current_user: User = Depends(require_role("admin"))):
+    with get_session() as db:
+        item = db.get(User, id)
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("admin_usuarios_form.html", request, site=site, current_user=current_user, item=item)
+
+
+@app.post("/admin/usuarios/editar/{id}")
+async def users_update(
+    id: int,
+    username: str = Form(""),
+    password: str = Form(""),
+    role: str = Form("funcionario"),
+    status_val: str = Form("ativo"),
+    _: User = Depends(require_role("admin")),
+):
+    if role not in ("admin", "funcionario"):
+        role = "funcionario"
+    if status_val not in ("ativo", "inativo"):
+        status_val = "ativo"
+    with get_session() as db:
+        item = db.get(User, id)
+        if item:
+            if username:
+                item.username = username
+            item.role = role
+            item.status = status_val
+            if password:
+                item.password_hash = hash_password(password)
+            db.commit()
+    return RedirectResponse(url="/admin/usuarios", status_code=status.HTTP_302_FOUND)
+
+
+@app.post("/admin/usuarios/excluir/{id}")
+async def users_delete(id: int, _: User = Depends(require_role("admin"))):
+    with get_session() as db:
+        item = db.get(User, id)
+        if item:
+            db.delete(item)
+            db.commit()
+    return RedirectResponse(url="/admin/usuarios", status_code=status.HTTP_302_FOUND)
+
+
+# ---------------------- Util ----------------------
+def slugify(text: str) -> str:
+    text = text.lower().strip()
+    text = re.sub(r"[^a-z0-9\s-]", "", text)
+    text = re.sub(r"[\s-]+", "-", text)
+    return text
+
+
 # ---------------------- Público: Suítes ----------------------
 @app.get("/suites", response_class=HTMLResponse)
 async def suites_public_list(request: Request):
@@ -461,8 +608,7 @@ async def suites_public_list(request: Request):
         site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
         tipos = db.execute(select(TipoSuite).order_by(TipoSuite.ordem.asc(), TipoSuite.nome.asc())).scalars().all()
         suites = db.execute(select(Suite).options(selectinload(Suite.tipo)).order_by(Suite.ordem.asc(), Suite.titulo.asc())).scalars().all()
-    t = templates_env.get_template("suites.html")
-    return t.render(request=request, site=site, tipos=tipos, suites=suites)
+    return _render("suites.html", request, site=site, tipos=tipos, suites=suites)
 
 
 @app.get("/suites/{slug}", response_class=HTMLResponse)
@@ -479,8 +625,7 @@ async def suite_public_detail(request: Request, slug: str):
             fotos = db.execute(
                 select(Foto).where(Foto.suite_id == suite.id).order_by(Foto.capa.desc(), Foto.ordem.asc())
             ).scalars().all()
-    t = templates_env.get_template("suite_detail.html")
-    return t.render(request=request, site=site, suite=suite, fotos=fotos)
+    return _render("suite_detail.html", request, site=site, suite=suite, fotos=fotos)
 
 
 # ---------------------- Público: Quartos (com painéis) ----------------------
@@ -512,5 +657,94 @@ async def quartos_public_list(request: Request):
             ).all()
             for sid, anome in rows:
                 amen_map.setdefault(sid, []).append(anome)
-    t = templates_env.get_template("quartos.html")
-    return t.render(request=request, site=site, suites=suites, cover_map=cover_map, amen_map=amen_map)
+    return _render("quartos.html", request, site=site, suites=suites, cover_map=cover_map, amen_map=amen_map)
+
+
+# ---------------------- Admin: Funcionários ----------------------
+@app.get("/admin/funcionarios", response_class=HTMLResponse)
+async def funcionarios_list(request: Request, _: User = Depends(require_role("admin"))):
+    with get_session() as db:
+        items = db.execute(select(Funcionario).order_by(Funcionario.ordem.asc(), Funcionario.nome.asc())).scalars().all()
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("admin_funcionarios.html", request, site=site, items=items)
+
+
+@app.get("/admin/funcionarios/novo", response_class=HTMLResponse)
+async def funcionarios_new(request: Request, _: User = Depends(require_role("admin"))):
+    with get_session() as db:
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("admin_funcionarios_form.html", request, site=site, item=None)
+
+
+@app.post("/admin/funcionarios/novo")
+async def funcionarios_create(
+    nome: str = Form(""),
+    cargo: str = Form(""),
+    telefone: str = Form(""),
+    whatsapp: str = Form(""),
+    email: str = Form(""),
+    status_val: str = Form("ativo"),
+    ordem: int = Form(0),
+    _: User = Depends(require_role("admin")),
+):
+    if status_val not in ("ativo", "inativo"):
+        status_val = "ativo"
+    with get_session() as db:
+        f = Funcionario(
+            nome=nome,
+            cargo=cargo or None,
+            telefone=telefone or None,
+            whatsapp=whatsapp or None,
+            email=email or None,
+            status=status_val,
+            ordem=ordem or 0,
+        )
+        db.add(f)
+        db.commit()
+    return RedirectResponse(url="/admin/funcionarios", status_code=status.HTTP_302_FOUND)
+
+
+@app.get("/admin/funcionarios/editar/{id}", response_class=HTMLResponse)
+async def funcionarios_edit(request: Request, id: int, _: User = Depends(require_role("admin"))):
+    with get_session() as db:
+        item = db.get(Funcionario, id)
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+    return _render("admin_funcionarios_form.html", request, site=site, item=item)
+
+
+@app.post("/admin/funcionarios/editar/{id}")
+async def funcionarios_update(
+    id: int,
+    nome: str = Form(""),
+    cargo: str = Form(""),
+    telefone: str = Form(""),
+    whatsapp: str = Form(""),
+    email: str = Form(""),
+    status_val: str = Form("ativo"),
+    ordem: int = Form(0),
+    _: User = Depends(require_role("admin")),
+):
+    if status_val not in ("ativo", "inativo"):
+        status_val = "ativo"
+    with get_session() as db:
+        item = db.get(Funcionario, id)
+        if item:
+            item.nome = nome
+            item.cargo = cargo or None
+            item.telefone = telefone or None
+            item.whatsapp = whatsapp or None
+            item.email = email or None
+            item.status = status_val
+            item.ordem = ordem or 0
+            db.commit()
+    return RedirectResponse(url="/admin/funcionarios", status_code=status.HTTP_302_FOUND)
+
+
+@app.post("/admin/funcionarios/excluir/{id}")
+async def funcionarios_delete(id: int, _: User = Depends(require_role("admin"))):
+    with get_session() as db:
+        item = db.get(Funcionario, id)
+        if item:
+            db.delete(item)
+            db.commit()
+    return RedirectResponse(url="/admin/funcionarios", status_code=status.HTTP_302_FOUND)

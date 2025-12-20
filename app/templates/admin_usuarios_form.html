@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if item else 'Novo' }} Usuário — Administração{% endblock %}
+{% block content %}
+  <h1 style="margin-top:0">{{ 'Editar' if item else 'Novo' }} Usuário</h1>
+  <form method="post" action="{{ '/admin/usuarios/editar/' ~ item.id if item else '/admin/usuarios/novo' }}" class="card">
+    <div class="grid cols-2">
+      <div>
+        <label>Usuário</label>
+        <input name="username" value="{{ (item and item.username) or '' }}" required />
+      </div>
+      <div>
+        <label>Role</label>
+        <select name="role">
+          <option value="admin" {{ 'selected' if (item and item.role=='admin') else '' }}>Admin</option>
+          <option value="funcionario" {{ 'selected' if (not item or item.role=='funcionario') else '' }}>Funcionário</option>
+        </select>
+      </div>
+      <div>
+        <label>Status</label>
+        <select name="status_val">
+          <option value="ativo" {{ 'selected' if (not item or item.status=='ativo') else '' }}>Ativo</option>
+          <option value="inativo" {{ 'selected' if (item and item.status=='inativo') else '' }}>Inativo</option>
+        </select>
+      </div>
+      <div>
+        <label>Senha {{ '(deixe em branco para manter)' if item else '' }}</label>
+        <input type="password" name="password" value="" />
+      </div>
+    </div>
+    <div style="margin-top:16px; display:flex; gap:10px">
+      <button class="btn" type="submit">Salvar</button>
+      <a class="btn" href="/admin/usuarios">Voltar</a>
+    </div>
+  </form>
+{% endblock %}
