@@ -23,6 +23,7 @@ import os
 import random
 from pathlib import Path
 from datetime import date
+from typing import Optional
 
 # Garantir criação das tabelas inicialmente (depois usaremos Alembic)
 Base.metadata.create_all(bind=engine)
@@ -57,8 +58,38 @@ templates_env = Environment(
     autoescape=select_autoescape(["html", "xml"]),
 )
 
+class CachedStaticFiles(StaticFiles):
+    def __init__(
+        self,
+        *args,
+        cache_control: str = "public, max-age=2592000, immutable",
+        cache_extensions: Optional[set[str]] = None,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        self._cache_control = cache_control
+        self._cache_extensions = cache_extensions or {
+            ".webp",
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".gif",
+            ".svg",
+            ".ico",
+        }
+
+    async def get_response(self, path: str, scope):
+        resp = await super().get_response(path, scope)
+        if getattr(resp, "status_code", None) == 200:
+            p = path.lower()
+            for ext in self._cache_extensions:
+                if p.endswith(ext):
+                    resp.headers["Cache-Control"] = self._cache_control
+                    break
+        return resp
+
 # Static
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/static", CachedStaticFiles(directory="app/static"), name="static")
 
 fotos_apartamentos_dir = Path(os.getenv("FOTOS_APARTAMENTOS_DIR", "fotos_apartamentos"))
 fotos_apartamentos_web_dir = Path(os.getenv("FOTOS_APARTAMENTOS_WEB_DIR", "fotos_apartamentos_web"))
@@ -66,13 +97,13 @@ fotos_apartamentos_web_dir = Path(os.getenv("FOTOS_APARTAMENTOS_WEB_DIR", "fotos
 if fotos_apartamentos_dir.is_dir():
     app.mount(
         "/fotos-apartamentos",
-        StaticFiles(directory=str(fotos_apartamentos_dir)),
+        CachedStaticFiles(directory=str(fotos_apartamentos_dir)),
         name="fotos-apartamentos",
     )
 if fotos_apartamentos_web_dir.is_dir():
     app.mount(
         "/fotos-apartamentos-web",
-        StaticFiles(directory=str(fotos_apartamentos_web_dir)),
+        CachedStaticFiles(directory=str(fotos_apartamentos_web_dir)),
         name="fotos-apartamentos-web",
     )
 
