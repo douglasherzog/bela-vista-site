@@ -46,6 +46,27 @@
     "hasMap": "https://www.google.com/maps/search/?api=1&query=Motel%20Bela%20Vista%2C%20Rua%20Guarani%20212%2C%20Rio%20Pardo%20RS%2C%20CEP%2096640-000%2C%20Brasil"
   }
   </script>
+  {% if ga4_measurement_id %}
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_measurement_id }}"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '{{ ga4_measurement_id }}');
+      (function(){
+        function track(method, href){
+          try { gtag('event', 'contact_click', { method: method, href: href }); } catch(e) {}
+        }
+        document.addEventListener('click', function(ev){
+          var a = ev.target && ev.target.closest ? ev.target.closest('a') : null;
+          if(!a || !a.href) return;
+          var href = a.href;
+          if(href.indexOf('https://wa.me/') === 0){ track('whatsapp', href); return; }
+          if(href.indexOf('tel:') === 0){ track('phone', href); return; }
+        }, true);
+      })();
+    </script>
+  {% endif %}
   <title>{% block title %}Motel Bela Vista — Rio Pardo/RS{% endblock %}</title>
   <link rel="icon" href="/static/img/favicon.png" type="image/png" />
   <link rel="icon" href="/static/img/logo.svg" type="image/svg+xml" />

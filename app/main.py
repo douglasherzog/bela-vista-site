@@ -797,18 +797,32 @@ async def quartos_public_list(request: Request):
             for sid, anome in rows:
                 amen_map.setdefault(sid, []).append(anome)
 
-        fotos_apartamentos: list[str] = []
+        fotos_apartamentos: list[dict[str, str]] = []
 
         if fotos_apartamentos_web_dir.exists() and fotos_apartamentos_web_dir.is_dir():
             exts = {".webp", ".jpg", ".jpeg", ".png", ".gif"}
             for p in fotos_apartamentos_web_dir.iterdir():
-                if p.is_file() and p.suffix.lower() in exts:
-                    fotos_apartamentos.append(f"/fotos-apartamentos-web/{p.name}")
+                if not (p.is_file() and p.suffix.lower() in exts):
+                    continue
+                if p.suffix.lower() == ".webp" and p.stem.endswith("-600"):
+                    continue
+
+                src = f"/fotos-apartamentos-web/{p.name}"
+                thumb_path = p.with_name(f"{p.stem}-600{p.suffix}")
+                thumb = (
+                    f"/fotos-apartamentos-web/{thumb_path.name}"
+                    if thumb_path.exists()
+                    else src
+                )
+
+                srcset = f"{thumb} 600w, {src} 1600w" if thumb != src else f"{src} 1600w"
+                fotos_apartamentos.append({"src": src, "thumb": thumb, "srcset": srcset})
         elif fotos_apartamentos_dir.exists() and fotos_apartamentos_dir.is_dir():
             exts = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
             for p in fotos_apartamentos_dir.iterdir():
                 if p.is_file() and p.suffix.lower() in exts:
-                    fotos_apartamentos.append(f"/fotos-apartamentos/{p.name}")
+                    src = f"/fotos-apartamentos/{p.name}"
+                    fotos_apartamentos.append({"src": src, "thumb": src, "srcset": src})
         random.shuffle(fotos_apartamentos)
 
         return _render(
