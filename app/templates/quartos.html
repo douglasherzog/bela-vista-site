@@ -60,4 +60,17 @@
     </div>
     <div class="subtitle" style="margin-top:10px">Valores válidos para casal.</div>
   </div>
+
+  <div class="card">
+    <h2 style="margin:0 0 10px">Fotos dos apartamentos</h2>
+    {% if fotos_apartamentos and fotos_apartamentos|length %}
+      <div style="display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:8px">
+        {% for url in fotos_apartamentos %}
+          <img src="{{ url }}" alt="Apartamento" style="width:100%; height:160px; object-fit:cover; border-radius:10px" loading="lazy" />
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="subtitle">Adicione imagens na pasta <strong>fotos_apartamentos/</strong> para aparecerem aqui.</p>
+    {% endif %}
+  </div>
 {% endblock %}

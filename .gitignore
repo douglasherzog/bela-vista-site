@@ -19,3 +19,7 @@ Thumbs.db
 
 # Env files
 .env*
+
+# Fotos (não versionar no git)
+fotos_apartamentos/
+fotos_apartamentos_web/

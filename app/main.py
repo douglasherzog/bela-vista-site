@@ -20,6 +20,8 @@ from .auth import (
 from typing import List
 import re
 import os
+import random
+from pathlib import Path
 
 # Garantir criação das tabelas inicialmente (depois usaremos Alembic)
 Base.metadata.create_all(bind=engine)
@@ -56,6 +58,12 @@ templates_env = Environment(
 
 # Static
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/fotos-apartamentos", StaticFiles(directory="fotos_apartamentos"), name="fotos-apartamentos")
+app.mount(
+    "/fotos-apartamentos-web",
+    StaticFiles(directory="fotos_apartamentos_web"),
+    name="fotos-apartamentos-web",
+)
 
 
 @app.exception_handler(HTTPException)
@@ -725,7 +733,32 @@ async def quartos_public_list(request: Request):
             ).all()
             for sid, anome in rows:
                 amen_map.setdefault(sid, []).append(anome)
-    return _render("quartos.html", request, site=site, suites=suites, cover_map=cover_map, amen_map=amen_map)
+
+        fotos_web_dir = Path("fotos_apartamentos_web")
+        fotos_raw_dir = Path("fotos_apartamentos")
+        fotos_apartamentos: list[str] = []
+
+        if fotos_web_dir.exists() and fotos_web_dir.is_dir():
+            exts = {".webp", ".jpg", ".jpeg", ".png", ".gif"}
+            for p in fotos_web_dir.iterdir():
+                if p.is_file() and p.suffix.lower() in exts:
+                    fotos_apartamentos.append(f"/fotos-apartamentos-web/{p.name}")
+        elif fotos_raw_dir.exists() and fotos_raw_dir.is_dir():
+            exts = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+            for p in fotos_raw_dir.iterdir():
+                if p.is_file() and p.suffix.lower() in exts:
+                    fotos_apartamentos.append(f"/fotos-apartamentos/{p.name}")
+        random.shuffle(fotos_apartamentos)
+
+        return _render(
+            "quartos.html",
+            request,
+            site=site,
+            suites=suites,
+            cover_map=cover_map,
+            amen_map=amen_map,
+            fotos_apartamentos=fotos_apartamentos,
+        )
 
 
 # ---------------------- Admin: Funcionários ----------------------
