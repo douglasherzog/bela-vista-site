@@ -282,7 +282,7 @@ async def sitemap_xml() -> Response:
         f"{SITE_URL}/",
         f"{SITE_URL}/sobre",
         f"{SITE_URL}/contato",
-        f"{SITE_URL}/quartos",
+        f"{SITE_URL}/apartamentos",
         f"{SITE_URL}/suites",
     ]
     try:
@@ -769,8 +769,8 @@ async def suite_public_detail(request: Request, slug: str):
 
 
 # ---------------------- Público: Quartos (com painéis) ----------------------
-@app.get("/quartos", response_class=HTMLResponse)
-async def quartos_public_list(request: Request):
+@app.get("/apartamentos", response_class=HTMLResponse)
+async def apartamentos_public_list(request: Request):
     with get_session() as db:
         site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
         suites = db.execute(
@@ -788,7 +788,7 @@ async def quartos_public_list(request: Request):
             cover_map[s.id] = f
         if suite_ids:
             # coletar amenidades por suíte
-            from .models import suite_amenidade, Amenidade
+            from .models import suite_amenidade
             rows = db.execute(
                 select(suite_amenidade.c.suite_id, Amenidade.nome)
                 .join(Amenidade, Amenidade.id == suite_amenidade.c.amenidade_id)
@@ -835,6 +835,11 @@ async def quartos_public_list(request: Request):
             amen_map=amen_map,
             fotos_apartamentos=fotos_apartamentos,
         )
+
+
+@app.get("/quartos")
+async def quartos_redirect() -> Response:
+    return RedirectResponse(url="/apartamentos", status_code=status.HTTP_301_MOVED_PERMANENTLY)
 
 
 # ---------------------- Admin: Funcionários ----------------------
