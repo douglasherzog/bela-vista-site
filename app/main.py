@@ -121,6 +121,7 @@ def _render(template_name: str, request: Request, **ctx):
     ctx.setdefault("request", request)
     ctx.setdefault("current_user", get_current_user(request))
     ctx.setdefault("site_url", SITE_URL)
+    ctx.setdefault("ga4_measurement_id", os.getenv("GA4_MEASUREMENT_ID", "").strip() or None)
     t = templates_env.get_template(template_name)
     return t.render(**ctx)
 
