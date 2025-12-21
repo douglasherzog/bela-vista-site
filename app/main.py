@@ -252,10 +252,20 @@ async def sitemap_xml() -> Response:
         f"{SITE_URL}/quartos",
         f"{SITE_URL}/suites",
     ]
-    with get_session() as db:
-        slugs = db.execute(select(Suite.slug).where(Suite.status == "ativo").order_by(Suite.slug.asc())).scalars().all()
-    for slug in slugs:
-        urls.append(f"{SITE_URL}/suites/{slug}")
+    try:
+        with get_session() as db:
+            slugs = (
+                db.execute(
+                    select(Suite.slug).where(Suite.status == "ativo").order_by(Suite.slug.asc())
+                )
+                .scalars()
+                .all()
+            )
+        for slug in slugs:
+            urls.append(f"{SITE_URL}/suites/{slug}")
+    except Exception:
+        # Em produção, não falhar o sitemap se o banco estiver indisponível.
+        pass
 
     body = [
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
