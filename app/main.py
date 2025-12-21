@@ -58,12 +58,18 @@ templates_env = Environment(
 
 # Static
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-app.mount("/fotos-apartamentos", StaticFiles(directory="fotos_apartamentos"), name="fotos-apartamentos")
-app.mount(
-    "/fotos-apartamentos-web",
-    StaticFiles(directory="fotos_apartamentos_web"),
-    name="fotos-apartamentos-web",
-)
+if Path("fotos_apartamentos").is_dir():
+    app.mount(
+        "/fotos-apartamentos",
+        StaticFiles(directory="fotos_apartamentos"),
+        name="fotos-apartamentos",
+    )
+if Path("fotos_apartamentos_web").is_dir():
+    app.mount(
+        "/fotos-apartamentos-web",
+        StaticFiles(directory="fotos_apartamentos_web"),
+        name="fotos-apartamentos-web",
+    )
 
 
 @app.exception_handler(HTTPException)
