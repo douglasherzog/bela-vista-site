@@ -23,3 +23,6 @@ Thumbs.db
 # Fotos (não versionar no git)
 fotos_apartamentos/
 fotos_apartamentos_web/
+
+# Arquivos de pacote/transferência
+fotos_apartamentos_web.zip

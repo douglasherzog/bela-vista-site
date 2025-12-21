@@ -22,6 +22,7 @@ import re
 import os
 import random
 from pathlib import Path
+from datetime import date
 
 # Garantir criação das tabelas inicialmente (depois usaremos Alembic)
 Base.metadata.create_all(bind=engine)
@@ -230,11 +231,20 @@ async def logout_post(_: Request):
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
 async def robots_txt() -> str:
-    return f"""User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}/sitemap.xml\n"""
+    return (
+        "User-agent: *\n"
+        "Allow: /\n\n"
+        "Disallow: /admin\n"
+        "Disallow: /administracao\n"
+        "Disallow: /config\n"
+        "Disallow: /funcionarios\n\n"
+        f"Sitemap: {SITE_URL}/sitemap.xml\n"
+    )
 
 
 @app.get("/sitemap.xml")
 async def sitemap_xml() -> Response:
+    lastmod = date.today().isoformat()
     urls: list[str] = [
         f"{SITE_URL}/",
         f"{SITE_URL}/sobre",
@@ -254,6 +264,7 @@ async def sitemap_xml() -> Response:
     for u in urls:
         body.append("  <url>")
         body.append(f"    <loc>{u}</loc>")
+        body.append(f"    <lastmod>{lastmod}</lastmod>")
         body.append("  </url>")
     body.append("</urlset>")
     xml = "\n".join(body) + "\n"
