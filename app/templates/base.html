@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  {% set site_url = 'https://www.motelbelavista.com.br' %}
+  {% set site_url = site_url or 'https://www.motelbelavista.com.br' %}
   {% set canonical_url = site_url ~ (request.url.path if request else '/') %}
   <meta name="robots" content="index,follow" />
   <meta name="description" content="{% block meta_description %}Motel Bela Vista em Rio Pardo/RS. Conforto, privacidade e atendimento 24h.{% endblock %}" />

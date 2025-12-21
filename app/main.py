@@ -49,7 +49,7 @@ except Exception:
 
 app = FastAPI(title="Motel Bela Vista - Rio Pardo/RS")
 
-SITE_URL = "https://www.motelbelavista.com.br"
+SITE_URL = os.getenv("SITE_URL", "https://www.motelbelavista.com.br").rstrip("/")
 
 # Templates Jinja
 templates_env = Environment(
@@ -89,6 +89,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 def _render(template_name: str, request: Request, **ctx):
     ctx.setdefault("request", request)
     ctx.setdefault("current_user", get_current_user(request))
+    ctx.setdefault("site_url", SITE_URL)
     t = templates_env.get_template(template_name)
     return t.render(**ctx)
 
@@ -301,7 +302,7 @@ async def config_get(request: Request, _: User = Depends(require_role("admin")))
     with get_session() as db:
         site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
     t = templates_env.get_template("config.html")
-    return t.render(request=request, site=site, current_user=get_current_user(request))
+    return t.render(request=request, site=site, current_user=get_current_user(request), site_url=SITE_URL)
 
 
 @app.post("/config")
