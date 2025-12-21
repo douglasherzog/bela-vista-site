@@ -76,4 +76,57 @@
     <div class="subtitle" style="margin-top:10px">Valores válidos para casal.</div>
     <div class="subtitle" style="margin-top:8px; color:#ffd166">Qualquer dano no interior do apartamento será cobrado na saída.</div>
   </div>
+
+  <script>
+    (function(){
+      try {
+        if (!window.matchMedia || !window.matchMedia('(max-width: 640px)').matches) return;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        var wrap = document.querySelector('.table-wrap');
+        if (!wrap) return;
+        var stopped = false;
+        function stop(){ stopped = true; }
+        wrap.addEventListener('touchstart', stop, {passive:true});
+        wrap.addEventListener('touchmove', stop, {passive:true});
+        wrap.addEventListener('wheel', stop, {passive:true});
+
+        function animate(from, to, duration, done){
+          var start = null;
+          function step(ts){
+            if (stopped) return;
+            if (start === null) start = ts;
+            var t = Math.min(1, (ts - start) / duration);
+            var eased = t < 0.5 ? (2*t*t) : (1 - Math.pow(-2*t + 2, 2)/2);
+            wrap.scrollLeft = from + (to - from) * eased;
+            if (t < 1) requestAnimationFrame(step); else if (done) done();
+          }
+          requestAnimationFrame(step);
+        }
+
+        function runOnce(){
+          if (stopped) return;
+          var max = wrap.scrollWidth - wrap.clientWidth;
+          if (max <= 16) return;
+          animate(0, max, 2600, function(){
+            if (stopped) return;
+            setTimeout(function(){ animate(max, 0, 2600); }, 500);
+          });
+        }
+
+        var ran = false;
+        var io = new IntersectionObserver(function(entries){
+          if (ran) return;
+          for (var i=0;i<entries.length;i++){
+            if (entries[i].isIntersecting){
+              ran = true;
+              runOnce();
+              try { io.disconnect(); } catch(e) {}
+              break;
+            }
+          }
+        }, {threshold: 0.35});
+        io.observe(wrap);
+      } catch(e) {}
+    })();
+  </script>
 {% endblock %}
