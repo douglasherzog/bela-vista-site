@@ -58,16 +58,20 @@ templates_env = Environment(
 
 # Static
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-if Path("fotos_apartamentos").is_dir():
+
+fotos_apartamentos_dir = Path(os.getenv("FOTOS_APARTAMENTOS_DIR", "fotos_apartamentos"))
+fotos_apartamentos_web_dir = Path(os.getenv("FOTOS_APARTAMENTOS_WEB_DIR", "fotos_apartamentos_web"))
+
+if fotos_apartamentos_dir.is_dir():
     app.mount(
         "/fotos-apartamentos",
-        StaticFiles(directory="fotos_apartamentos"),
+        StaticFiles(directory=str(fotos_apartamentos_dir)),
         name="fotos-apartamentos",
     )
-if Path("fotos_apartamentos_web").is_dir():
+if fotos_apartamentos_web_dir.is_dir():
     app.mount(
         "/fotos-apartamentos-web",
-        StaticFiles(directory="fotos_apartamentos_web"),
+        StaticFiles(directory=str(fotos_apartamentos_web_dir)),
         name="fotos-apartamentos-web",
     )
 
@@ -740,18 +744,16 @@ async def quartos_public_list(request: Request):
             for sid, anome in rows:
                 amen_map.setdefault(sid, []).append(anome)
 
-        fotos_web_dir = Path("fotos_apartamentos_web")
-        fotos_raw_dir = Path("fotos_apartamentos")
         fotos_apartamentos: list[str] = []
 
-        if fotos_web_dir.exists() and fotos_web_dir.is_dir():
+        if fotos_apartamentos_web_dir.exists() and fotos_apartamentos_web_dir.is_dir():
             exts = {".webp", ".jpg", ".jpeg", ".png", ".gif"}
-            for p in fotos_web_dir.iterdir():
+            for p in fotos_apartamentos_web_dir.iterdir():
                 if p.is_file() and p.suffix.lower() in exts:
                     fotos_apartamentos.append(f"/fotos-apartamentos-web/{p.name}")
-        elif fotos_raw_dir.exists() and fotos_raw_dir.is_dir():
+        elif fotos_apartamentos_dir.exists() and fotos_apartamentos_dir.is_dir():
             exts = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
-            for p in fotos_raw_dir.iterdir():
+            for p in fotos_apartamentos_dir.iterdir():
                 if p.is_file() and p.suffix.lower() in exts:
                     fotos_apartamentos.append(f"/fotos-apartamentos/{p.name}")
         random.shuffle(fotos_apartamentos)
