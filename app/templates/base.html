@@ -157,6 +157,7 @@
             <span class="sep"> | </span>
             <a href="https://wa.me/5551995843002?text=Ol%C3%A1%2C+gostaria+de+informa%C3%A7%C3%B5es" target="_blank">(51)99584-3002</a>
           </div>
+          <div class="subtitle" style="margin-top:6px; font-size:.92rem">Dica: clique nos telefones para abrir o WhatsApp.</div>
           <div style="margin-top:8px; display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.14); background:rgba(255,209,102,.12); color:#ffe7a6; font-weight:600; font-size:.92rem; line-height:1.2">
             Reservas somente mediante pagamento adiantado por PIX.
           </div>
@@ -206,9 +207,9 @@
         <div class="line"><span class="label">Telefone/WhatsApp:</span> <a href="https://wa.me/5551995843009?text=Ol%C3%A1%2C+gostaria+de+informa%C3%A7%C3%B5es" target="_blank">(51)99584-3009</a> | <a href="https://wa.me/5551995843002?text=Ol%C3%A1%2C+gostaria+de+informa%C3%A7%C3%B5es" target="_blank">(51)99584-3002</a></div>
         <div class="line"><span class="label">Horário:</span> Atendimento 24h</div>
         {% if site.email %}
-          <div class="line"><span class="label">Email:</span> <a href="mailto:{{ site.email }}">{{ site.email }}</a></div>
+          <div class="line"><span class="label">Email:</span> <a href="mailto:{{ site.email }}">{{ site.email }}</a> <span class="label">(clique para enviar)</span></div>
         {% else %}
-          <div class="line"><span class="label">Email:</span> <a href="mailto:motelbelavistarp@gmail.com">motelbelavistarp@gmail.com</a></div>
+          <div class="line"><span class="label">Email:</span> <a href="mailto:motelbelavistarp@gmail.com">motelbelavistarp@gmail.com</a> <span class="label">(clique para enviar)</span></div>
         {% endif %}
         <div style="display:flex; gap:10px; flex-wrap:wrap">
           <a class="btn" href="https://www.google.com/maps/search/?api=1&query={{ query_mapa | urlencode }}" target="_blank">Como chegar</a>
