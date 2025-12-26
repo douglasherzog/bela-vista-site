@@ -24,6 +24,7 @@ import random
 from pathlib import Path
 from datetime import date
 from typing import Optional
+from urllib.parse import urlparse
 
 # Garantir criação das tabelas inicialmente (depois usaremos Alembic)
 Base.metadata.create_all(bind=engine)
@@ -51,6 +52,24 @@ except Exception:
 app = FastAPI(title="Motel Bela Vista - Rio Pardo/RS")
 
 SITE_URL = os.getenv("SITE_URL", "https://www.motelbelavista.com.br").rstrip("/")
+_parsed_site_url = urlparse(SITE_URL)
+_default_canonical_scheme = (_parsed_site_url.scheme or "https").lower()
+_default_canonical_host = _parsed_site_url.netloc
+if _default_canonical_host.startswith("www."):
+    _default_canonical_host = _default_canonical_host[4:]
+CANONICAL_SCHEME = (os.getenv("CANONICAL_SCHEME") or _default_canonical_scheme).lower()
+CANONICAL_HOST = os.getenv("CANONICAL_HOST") or _default_canonical_host
+CANONICAL_SITE_URL = f"{CANONICAL_SCHEME}://{CANONICAL_HOST}".rstrip("/")
+
+
+@app.middleware("http")
+async def enforce_canonical_host(request: Request, call_next):
+    host = (request.headers.get("host") or "").split(":", 1)[0].lower()
+    if host and host != CANONICAL_HOST.lower() and host not in {"localhost", "127.0.0.1"}:
+        qs = (request.url.query or "")
+        location = f"{CANONICAL_SITE_URL}{request.url.path}" + (f"?{qs}" if qs else "")
+        return RedirectResponse(url=location, status_code=status.HTTP_301_MOVED_PERMANENTLY)
+    return await call_next(request)
 
 # Templates Jinja
 templates_env = Environment(
@@ -120,7 +139,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 def _render(template_name: str, request: Request, **ctx):
     ctx.setdefault("request", request)
     ctx.setdefault("current_user", get_current_user(request))
-    ctx.setdefault("site_url", SITE_URL)
+    ctx.setdefault("site_url", CANONICAL_SITE_URL)
     ctx.setdefault("ga4_measurement_id", os.getenv("GA4_MEASUREMENT_ID", "").strip() or None)
     t = templates_env.get_template(template_name)
     return t.render(**ctx)
@@ -271,7 +290,7 @@ async def robots_txt() -> str:
         "Disallow: /administracao\n"
         "Disallow: /config\n"
         "Disallow: /funcionarios\n\n"
-        f"Sitemap: {SITE_URL}/sitemap.xml\n"
+        f"Sitemap: {CANONICAL_SITE_URL}/sitemap.xml\n"
     )
 
 
@@ -279,11 +298,11 @@ async def robots_txt() -> str:
 async def sitemap_xml() -> Response:
     lastmod = date.today().isoformat()
     urls: list[str] = [
-        f"{SITE_URL}/",
-        f"{SITE_URL}/sobre",
-        f"{SITE_URL}/contato",
-        f"{SITE_URL}/apartamentos",
-        f"{SITE_URL}/suites",
+        f"{CANONICAL_SITE_URL}/",
+        f"{CANONICAL_SITE_URL}/sobre",
+        f"{CANONICAL_SITE_URL}/contato",
+        f"{CANONICAL_SITE_URL}/apartamentos",
+        f"{CANONICAL_SITE_URL}/suites",
     ]
     try:
         with get_session() as db:
@@ -295,7 +314,7 @@ async def sitemap_xml() -> Response:
                 .all()
             )
         for slug in slugs:
-            urls.append(f"{SITE_URL}/suites/{slug}")
+            urls.append(f"{CANONICAL_SITE_URL}/suites/{slug}")
     except Exception:
         # Em produção, não falhar o sitemap se o banco estiver indisponível.
         pass
@@ -334,7 +353,7 @@ async def config_get(request: Request, _: User = Depends(require_role("admin")))
     with get_session() as db:
         site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
     t = templates_env.get_template("config.html")
-    return t.render(request=request, site=site, current_user=get_current_user(request), site_url=SITE_URL)
+    return t.render(request=request, site=site, current_user=get_current_user(request), site_url=CANONICAL_SITE_URL)
 
 
 @app.post("/config")
