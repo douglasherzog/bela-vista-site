@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="none">
+  <path
+    d="M32 22V78 M68 22V78 M32 50H68
+       M22 24V40 M22 60V76
+       M78 24V40 M78 60V76"
+    stroke="#22D3EE"
+    stroke-width="10"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>
