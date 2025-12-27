@@ -193,9 +193,12 @@
   </main>
 
   <footer>
-    <div class="container" style="padding:18px 24px; display:flex; align-items:center; justify-content:center; gap:10px; opacity:.9">
-      <img src="/static/img/logo.svg" alt="Motel Bela Vista" style="height:18px; width:auto; display:block" />
-      <div style="font-size:.92rem">CNPJ: 03.260.863/0001-96 desde 1999</div>
+    <div class="container" style="padding:18px 24px; display:flex; align-items:center; justify-content:space-between; gap:10px; opacity:.9; flex-wrap:wrap">
+      <div style="display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap">
+        <img src="/static/img/logo.svg" alt="Motel Bela Vista" style="height:18px; width:auto; display:block" />
+        <div style="font-size:.92rem">CNPJ: 03.260.863/0001-96 desde 1999</div>
+      </div>
+      {% include 'partials/herzog_developer_signature.html' %}
     </div>
   </footer>
 

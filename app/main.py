@@ -861,6 +861,29 @@ async def quartos_redirect() -> Response:
     return RedirectResponse(url="/apartamentos", status_code=status.HTTP_301_MOVED_PERMANENTLY)
 
 
+@app.get("/motel-em-rio-pardo", response_class=HTMLResponse)
+async def seo_motel_em_rio_pardo(request: Request):
+    with get_session() as db:
+        site = db.execute(select(SiteConfig).limit(1)).scalar_one_or_none()
+        suites = (
+            db.execute(
+                select(Suite)
+                .options(selectinload(Suite.tipo))
+                .order_by(Suite.destaque.desc(), Suite.ordem.asc(), Suite.titulo.asc())
+            )
+            .scalars()
+            .all()
+        )
+    google_business_profile_url = os.getenv("GOOGLE_BUSINESS_PROFILE_URL", "").strip() or None
+    return _render(
+        "motel_em_rio_pardo.html",
+        request,
+        site=site,
+        suites=suites,
+        google_business_profile_url=google_business_profile_url,
+    )
+
+
 # ---------------------- Admin: Funcionários ----------------------
 @app.get("/admin/funcionarios", response_class=HTMLResponse)
 async def funcionarios_list(request: Request, _: User = Depends(require_role("admin"))):
