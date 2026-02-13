@@ -1,0 +1,29 @@
+services:
+  web:
+    build:
+      context: .
+    container_name: belavista_web
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////var/data/belavista.db}
+      SESSION_SECRET: ${SESSION_SECRET:-change-me}
+      ADMIN_USER: ${ADMIN_USER:-admin}
+      ADMIN_PASS: ${ADMIN_PASS:-change-me}
+      SITE_URL: ${SITE_URL:-https://www.motelbelavista.com.br}
+      CANONICAL_SCHEME: ${CANONICAL_SCHEME:-https}
+      CANONICAL_HOST: ${CANONICAL_HOST:-motelbelavista.com.br}
+      FOTOS_APARTAMENTOS_WEB_DIR: ${FOTOS_APARTAMENTOS_WEB_DIR:-/app/fotos_apartamentos_web}
+    volumes:
+      - ${BELAVISTA_DATA_DIR:-/srv/bela-vista-site/data}:/var/data
+      - ${BELAVISTA_FOTOS_WEB_DIR:-/srv/bela-vista-site/assets/fotos_apartamentos_web}:/app/fotos_apartamentos_web:ro
+    ports:
+      - "8002:8000"
+    expose:
+      - "8000"
+    networks:
+      - proxy_net
+    restart: unless-stopped
+
+networks:
+  proxy_net:
+    external: true
+    name: proxy_net
