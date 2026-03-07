@@ -21,8 +21,8 @@ def main():
                 nome_site="Motel Bela Vista",
                 descricao_breve="Conforto, privacidade e atendimento 24h em Rio Pardo/RS.",
                 endereco="Rua Guarani, 212, Rio Pardo - RS, 96640-000, Brasil",
-                whatsapp="(51)99584-3002",
-                telefone="(51)99584-3002",
+                whatsapp="(51)99584-3009",
+                telefone="(51)99584-3009",
                 maps_embed_url=None,
             )
             db.add(site)

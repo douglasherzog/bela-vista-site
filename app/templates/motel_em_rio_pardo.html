@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Motel em Rio Pardo — Pernoite e Suítes | {{ (site and site.nome_site) or 'Motel Bela Vista' }}{% endblock %}
+{% block meta_description %}Procurando motel em Rio Pardo/RS? Conheça o Motel Bela Vista: atendimento 24h, pernoite e suítes confortáveis (incluindo opção com hidromassagem). Veja fotos, valores e como chegar.{% endblock %}
+{% block og_title %}Motel em Rio Pardo — Pernoite e Suítes | Motel Bela Vista{% endblock %}
+{% block og_description %}Motel em Rio Pardo/RS com atendimento 24h, pernoite e suítes confortáveis (com opção com hidromassagem). Confira valores e localização.{% endblock %}
+{% block twitter_title %}Motel em Rio Pardo — Pernoite e Suítes | Motel Bela Vista{% endblock %}
+{% block twitter_description %}Motel em Rio Pardo/RS com atendimento 24h, pernoite e suítes confortáveis (com opção com hidromassagem). Confira valores e localização.{% endblock %}
+
+{% block content %}
+  <div class="card" style="display:flex; flex-direction:column; gap:10px; padding:28px">
+    <h1 style="margin:0 0 6px; font-size:1.8rem">Motel em Rio Pardo — Pernoite e Suítes</h1>
+    <p class="subtitle" style="font-size:1.05rem; line-height:1.6">Se você está buscando <strong>motel em Rio Pardo/RS</strong> para curtir a dois com conforto e privacidade, o Motel Bela Vista oferece <strong>atendimento 24h</strong>, opções para <strong>pernoite</strong> e suítes pensadas para momentos especiais.</p>
+    <p class="subtitle" style="margin:0; line-height:1.6">Quer uma experiência mais completa? Temos opção de <strong>suíte com banheira de hidromassagem</strong> (hidro), além de ambientes confortáveis para uma pausa rápida ou uma noite inteira.</p>
+    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap">
+      <a class="btn" href="/apartamentos">Ver preços e apartamentos</a>
+      <a class="btn" href="/suites">Ver lista de suítes</a>
+      <a class="btn" href="https://wa.me/5551995843009?text=Ol%C3%A1%2C+gostaria+de+informa%C3%A7%C3%B5es+sobre+pernoite+e+su%C3%ADtes" target="_blank">Consultar no WhatsApp</a>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2 style="margin:0 0 10px">Pernoite em Rio Pardo/RS</h2>
+    <p class="subtitle" style="margin:0; line-height:1.6">Para quem procura <strong>pernoite em Rio Pardo</strong>, você pode conferir os valores na página de apartamentos. Se preferir, chame no WhatsApp para confirmar disponibilidade e tirar dúvidas rapidamente.</p>
+    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap">
+      <a class="btn" href="/apartamentos#tabela-de-precos">Ver tabela de preços</a>
+      <a class="btn" href="/contato">Ver contato</a>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2 style="margin:0 0 10px">Suítes (incluindo opção com hidromassagem)</h2>
+    {% if suites and suites|length %}
+      <div class="grid cols-2">
+        {% for s in suites %}
+          <a href="/suites/{{ s.slug }}" class="card" style="display:block">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="flex:1">
+                <h3 style="margin:0 0 4px">{{ s.titulo }}</h3>
+                <div class="subtitle">{{ s.tipo and s.tipo.nome or '' }}</div>
+                <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
+                  {% if s.preco_hora %}<span class="badge">R$ {{ '%.2f'|format(s.preco_hora) }}/h</span>{% endif %}
+                  {% if s.preco_pernoite %}<span class="badge">Pernoite R$ {{ '%.2f'|format(s.preco_pernoite) }}</span>{% endif %}
+                  {% if not s.preco_hora and not s.preco_pernoite %}<span class="subtitle">Consulte valores</span>{% endif %}
+                </div>
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="subtitle">Em breve nossas suítes estarão disponíveis aqui.</p>
+    {% endif %}
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2 style="margin:0 0 10px">Localização e como chegar</h2>
+    <p class="subtitle" style="margin:0; line-height:1.6">Estamos em Rio Pardo/RS. Use o botão abaixo para abrir o trajeto no Google Maps.</p>
+    {% set endereco_padrao = 'Rua Guarani 212, Rio Pardo RS, CEP 96640-000, Brasil' %}
+    {% set endereco_mapa = (site.endereco if site and site.endereco else endereco_padrao) %}
+    {% set query_mapa = ('Motel Bela Vista, ' ~ endereco_mapa) %}
+    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap">
+      <a class="btn" href="https://www.google.com/maps/search/?api=1&query={{ query_mapa | urlencode }}" target="_blank">Abrir no Google Maps</a>
+      {% if google_business_profile_url %}
+        <a class="btn" href="{{ google_business_profile_url }}" target="_blank">Ver Perfil no Google</a>
+      {% endif %}
+    </div>
+    {% if not google_business_profile_url %}
+      <p class="subtitle" style="margin-top:10px">Se você tiver o link do nosso <strong>Perfil da Empresa no Google</strong> (Google Business Profile), podemos colocar aqui também para facilitar avaliações e informações oficiais.</p>
+    {% endif %}
+  </div>
+{% endblock %}
